@@ -1,0 +1,30 @@
+# Core dependencies
+langchain==0.1.0
+langchain-community==0.0.10
+langchain-openai==0.0.2
+openai==1.6.1
+chromadb==0.4.22
+
+# Data fetching and parsing
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==5.1.0
+sec-edgar-downloader==5.0.2
+
+# PDF processing
+pypdf==3.17.4
+pdfplumber==0.10.3
+
+# Frontend
+streamlit==1.29.0
+plotly==5.18.0
+pandas==2.1.4
+
+# Utilities
+python-dotenv==1.0.0
+pydantic==2.5.3
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-asyncio==0.21.1
