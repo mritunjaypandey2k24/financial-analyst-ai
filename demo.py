@@ -2,7 +2,7 @@
 Demo script for Financial Analyst AI
 
 This script demonstrates the core functionality of the Financial Analyst AI system.
-Note: Requires OpenAI API key to be set in environment variables.
+Note: Requires Google AI Studio API key to be set in environment variables.
 """
 
 def demo_data_ingestion():
