@@ -1,9 +1,9 @@
 # Core dependencies
-langchain==0.3.27
-langchain-community==0.3.27
-langchain-core==0.3.27
+langchain==0.3.81
+langchain-community==0.3.81
+langchain-core==0.3.81
 langchain-openai==0.2.12
-langchain-text-splitters==0.3.27
+langchain-text-splitters==0.3.81
 openai==1.6.1
 chromadb==0.4.22
 
