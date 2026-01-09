@@ -6,8 +6,8 @@ comparative financial analysis using RAG Engine as a tool.
 """
 from typing import List, Dict, Optional
 from langchain_openai import ChatOpenAI
-from langchain.agents import Tool, AgentExecutor, create_openai_functions_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.tools import Tool
+from langgraph.prebuilt import create_react_agent
 import config
 import logging
 
@@ -161,8 +161,8 @@ class FinancialAnalystAgent:
             logger.error(f"Error comparing companies: {str(e)}")
             return f"Error comparing companies: {str(e)}"
     
-    def _create_agent(self) -> AgentExecutor:
-        """Create the agent executor."""
+    def _create_agent(self):
+        """Create the agent executor using LangGraph."""
         system_message = """You are a financial analyst AI assistant specialized in analyzing SEC 10-K filings.
         
 Your role is to:
@@ -180,24 +180,13 @@ When answering:
 
 If you don't find specific information in the filings, say so clearly."""
 
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_message),
-            MessagesPlaceholder(variable_name="chat_history", optional=True),
-            ("human", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad")
-        ])
-        
-        agent = create_openai_functions_agent(self.llm, self.tools, prompt)
-        
-        agent_executor = AgentExecutor(
-            agent=agent,
-            tools=self.tools,
-            verbose=True,
-            max_iterations=5,
-            handle_parsing_errors=True
+        agent = create_react_agent(
+            self.llm, 
+            self.tools,
+            state_modifier=system_message
         )
         
-        return agent_executor
+        return agent
     
     def query(self, question: str) -> str:
         """
@@ -212,11 +201,22 @@ If you don't find specific information in the filings, say so clearly."""
         try:
             logger.info(f"Processing query: {question}")
             
+            # LangGraph agents use a different invocation pattern
             response = self.agent_executor.invoke({
-                "input": question
+                "messages": [("user", question)]
             })
             
-            return response.get("output", "I couldn't generate a response.")
+            # Extract the final message from the agent
+            messages = response.get("messages", [])
+            if messages:
+                # Get the last AI message
+                for msg in reversed(messages):
+                    if hasattr(msg, 'content') and msg.type == 'ai':
+                        return msg.content
+                # Fallback: return the last message content
+                return messages[-1].content if hasattr(messages[-1], 'content') else str(messages[-1])
+            
+            return "I couldn't generate a response."
             
         except Exception as e:
             logger.error(f"Error processing query: {str(e)}")
