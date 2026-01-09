@@ -7,7 +7,7 @@ from typing import List, Dict, Optional
 import chromadb
 from chromadb.config import Settings
 from langchain_community.vectorstores import Chroma
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 import config
 import logging
 from .text_splitter import DocumentChunker
@@ -35,12 +35,12 @@ class RAGEngine:
         self.chunker = DocumentChunker()
         
         # Initialize embeddings
-        if not config.OPENAI_API_KEY:
-            logger.warning("OPENAI_API_KEY not set. RAG Engine will not work properly.")
+        if not config.GOOGLE_AI_STUDIO_API_KEY:
+            logger.warning("GOOGLE_AI_STUDIO_API_KEY not set. RAG Engine will not work properly.")
         
-        self.embeddings = OpenAIEmbeddings(
+        self.embeddings = GoogleGenerativeAIEmbeddings(
             model=config.EMBEDDING_MODEL,
-            openai_api_key=config.OPENAI_API_KEY
+            google_api_key=config.GOOGLE_AI_STUDIO_API_KEY
         )
         
         # Initialize ChromaDB

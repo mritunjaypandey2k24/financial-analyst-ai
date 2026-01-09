@@ -61,7 +61,7 @@
 | langchain | 0.1.0 → 0.3.27 | **0.3.81** | Latest security patches |
 | langchain-community | 0.0.10 → 0.3.27 | **0.3.81** | Security patches (XXE, SSRF, pickle) |
 | langchain-core | - → 0.3.27 | **0.3.81** | Security patches (template injection, serialization) |
-| langchain-openai | 0.0.2 | 0.2.12 | Compatibility |
+| langchain-google-genai | - | **Latest** | Google AI Studio integration |
 | langchain-text-splitters | - → 0.3.27 | **0.3.81** | Latest stable version |
 
 #### Code Changes
@@ -104,7 +104,7 @@ pip list | grep langchain
 # langchain                     0.3.81
 # langchain-community           0.3.81
 # langchain-core                0.3.81
-# langchain-openai              0.2.12
+# langchain-google-genai        <latest>
 # langchain-text-splitters      0.3.81
 ```
 

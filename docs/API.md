@@ -122,7 +122,7 @@ Split multiple documents into chunks with metadata.
 
 ### EmbeddingGenerator
 
-Generates embeddings for text chunks using OpenAI.
+Generates embeddings for text chunks using Google AI Studio.
 
 #### Constructor
 
@@ -131,7 +131,7 @@ EmbeddingGenerator(model: str = None)
 ```
 
 **Parameters:**
-- `model`: OpenAI embedding model name (default: from config.EMBEDDING_MODEL)
+- `model`: Google AI embedding model name (default: from config.EMBEDDING_MODEL)
 
 #### Methods
 
@@ -304,11 +304,11 @@ Configuration is managed through the `config.py` module and environment variable
 
 ### Environment Variables
 
-- `OPENAI_API_KEY`: OpenAI API key (required)
+- `GOOGLE_AI_STUDIO_API_KEY`: Google AI Studio API key (required)
 - `DATA_DIR`: Directory for storing SEC filings (default: `./data/10k_filings`)
 - `CHROMA_DB_DIR`: Directory for ChromaDB database (default: `./data/chroma_db`)
-- `EMBEDDING_MODEL`: OpenAI embedding model (default: `text-embedding-ada-002`)
-- `LLM_MODEL`: OpenAI LLM model (default: `gpt-3.5-turbo`)
+- `EMBEDDING_MODEL`: Google AI embedding model (default: `models/embedding-001`)
+- `LLM_MODEL`: Google AI LLM model (default: `gemini-1.5-flash`)
 - `USER_AGENT`: User agent for SEC EDGAR requests
 
 ### Configuration Constants
@@ -332,7 +332,7 @@ All modules implement comprehensive error handling:
 ### Common Exceptions
 
 - `Exception`: Generic errors with descriptive messages
-- API rate limit errors from OpenAI
+- API rate limit errors from Google AI Studio
 - Network errors when fetching SEC filings
 - ChromaDB initialization errors
 
@@ -349,7 +349,7 @@ from rag_engine import RAGEngine
 from agent import FinancialAnalystAgent
 
 # Set API key
-config.OPENAI_API_KEY = "your-api-key"
+config.GOOGLE_AI_STUDIO_API_KEY = "your-api-key"
 
 # Fetch filings
 fetcher = SECFilingFetcher()
