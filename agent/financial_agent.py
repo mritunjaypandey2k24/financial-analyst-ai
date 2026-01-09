@@ -180,10 +180,13 @@ When answering:
 
 If you don't find specific information in the filings, say so clearly."""
 
+        # Fixed: Changed 'state_modifier' to 'prompt' parameter
+        # The create_react_agent function in LangGraph uses 'prompt' not 'state_modifier'
+        # The prompt parameter accepts a string or SystemMessage for the agent's system instructions
         agent = create_react_agent(
             self.llm, 
             self.tools,
-            state_modifier=system_message
+            prompt=system_message
         )
         
         return agent
