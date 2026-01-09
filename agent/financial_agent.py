@@ -211,10 +211,11 @@ If you don't find specific information in the filings, say so clearly."""
             if messages:
                 # Get the last AI message
                 for msg in reversed(messages):
-                    if hasattr(msg, 'content') and msg.type == 'ai':
+                    if hasattr(msg, 'content') and getattr(msg, 'type', None) == 'ai':
                         return msg.content
                 # Fallback: return the last message content
-                return messages[-1].content if hasattr(messages[-1], 'content') else str(messages[-1])
+                last_msg = messages[-1]
+                return last_msg.content if hasattr(last_msg, 'content') else str(last_msg)
             
             return "I couldn't generate a response."
             
