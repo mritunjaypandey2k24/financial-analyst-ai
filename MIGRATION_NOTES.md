@@ -112,7 +112,7 @@ This document describes the migration from OpenAI API to Google AI Studio (Gemin
 If you're upgrading an existing installation:
 
 1. **Get a Google AI Studio API Key**
-   - Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
    - Create or select a project
    - Generate an API key
 
@@ -185,7 +185,7 @@ If you're upgrading an existing installation:
 ### "GOOGLE_AI_STUDIO_API_KEY not set"
 - Ensure your `.env` file exists and contains the key
 - Check the key is not wrapped in quotes in the `.env` file
-- Verify the key is valid by testing in [AI Studio](https://makersuite.google.com/)
+- Verify the key is valid by testing in [AI Studio](https://aistudio.google.com/)
 
 ### "Error generating embeddings"
 - Verify your API key is active
