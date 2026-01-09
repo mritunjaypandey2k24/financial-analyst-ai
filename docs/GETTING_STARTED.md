@@ -25,10 +25,10 @@ Create a `.env` file from the template:
 cp .env.example .env
 ```
 
-Edit `.env` and add your OpenAI API key:
+Edit `.env` and add your Google AI Studio API key:
 
 ```
-OPENAI_API_KEY=your_api_key_here
+GOOGLE_AI_STUDIO_API_KEY=your_api_key_here
 ```
 
 ### 3. Running the Application
@@ -126,7 +126,7 @@ print(response)
    ```
 
 2. **Configure settings** in the sidebar:
-   - Enter your OpenAI API key (if not in .env)
+   - Enter your Google AI Studio API key (if not in .env)
    - Select companies to analyze
    - Choose number of filings
 
@@ -207,7 +207,7 @@ agent.query("How did iPhone sales perform for Apple in 2022?")
 1. **Start Small**: Fetch 1 filing per company initially
 2. **Selective Indexing**: Only index companies you need
 3. **Clear Cache**: Use `rag.clear_collection()` to start fresh
-4. **API Costs**: Be mindful of OpenAI API usage
+4. **API Costs**: Be mindful of Google AI Studio API usage
 
 ### Troubleshooting
 
@@ -217,7 +217,7 @@ agent.query("How did iPhone sales perform for Apple in 2022?")
 **Problem**: Rate limit errors
 - **Solution**: Reduce number of concurrent queries, upgrade API plan
 
-**Problem**: "OpenAI API key not set"
+**Problem**: "Google AI Studio API key not set"
 - **Solution**: Check .env file or set in Streamlit sidebar
 
 **Problem**: ChromaDB errors

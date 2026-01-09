@@ -4,14 +4,14 @@ An AI-powered system for analyzing SEC 10-K filings using Retrieval-Augmented Ge
 
 ## 🎯 Overview
 
-Financial Analyst AI enables users to query and analyze SEC 10-K filings through natural language, leveraging the power of OpenAI's GPT models combined with a vector database for efficient document retrieval. The system can fetch filings, process them, and answer comparative financial analysis questions.
+Financial Analyst AI enables users to query and analyze SEC 10-K filings through natural language, leveraging the power of Google AI Studio's Gemini models combined with a vector database for efficient document retrieval. The system can fetch filings, process them, and answer comparative financial analysis questions.
 
 ## ✨ Features
 
 - **Automated Data Ingestion**: Fetch SEC 10-K filings directly from the EDGAR database
 - **Intelligent Document Processing**: Split and chunk documents for optimal retrieval
-- **Vector Search**: Fast similarity search using ChromaDB and OpenAI embeddings
-- **AI-Powered Analysis**: Natural language queries answered by GPT models
+- **Vector Search**: Fast similarity search using ChromaDB and Google AI embeddings
+- **AI-Powered Analysis**: Natural language queries answered by Gemini models
 - **Comparative Analysis**: Compare financial metrics across multiple companies
 - **Interactive UI**: User-friendly Streamlit interface with visualizations
 
@@ -54,7 +54,7 @@ financial-analyst-ai/
 ### Prerequisites
 
 - Python 3.8 or higher
-- OpenAI API key
+- Google AI Studio API key
 
 ### Installation
 
@@ -78,7 +78,7 @@ financial-analyst-ai/
 4. **Configure environment variables**
    ```bash
    cp .env.example .env
-   # Edit .env and add your OpenAI API key
+   # Edit .env and add your Google AI Studio API key
    ```
 
 ### Running the Application
@@ -90,7 +90,7 @@ financial-analyst-ai/
 
 2. **Access the application**
    - Open your browser to `http://localhost:8501`
-   - Enter your OpenAI API key if not in .env
+   - Enter your Google AI Studio API key if not in .env
    - Select companies to analyze
    - Click "Fetch & Index Filings"
    - Start asking questions!
@@ -168,7 +168,7 @@ pytest tests/test_data_ingestion.py -v
 pytest tests/ --cov=. --cov-report=html
 ```
 
-**Note**: Integration tests require an OpenAI API key to be set.
+**Note**: Integration tests require a Google AI Studio API key to be set.
 
 ## 📊 System Components
 
@@ -190,7 +190,7 @@ Implements Retrieval-Augmented Generation pipeline:
 - Default chunk size: 1000 characters
 - Default overlap: 200 characters
 
-**Embeddings**: Generates embeddings using OpenAI's `text-embedding-ada-002` model
+**Embeddings**: Generates embeddings using Google AI Studio's `models/embedding-001` model
 
 **Vector Store**: ChromaDB for efficient similarity search
 - Persistent storage
@@ -229,20 +229,20 @@ Edit `.env` file or set environment variables:
 
 ```bash
 # Required
-OPENAI_API_KEY=your_openai_api_key_here
+GOOGLE_AI_STUDIO_API_KEY=your_google_ai_studio_api_key_here
 
 # Optional (defaults provided)
 DATA_DIR=./data/10k_filings
 CHROMA_DB_DIR=./data/chroma_db
-EMBEDDING_MODEL=text-embedding-ada-002
-LLM_MODEL=gpt-3.5-turbo
+EMBEDDING_MODEL=models/embedding-001
+LLM_MODEL=gemini-1.5-flash
 ```
 
 ## 🔒 Security & Privacy
 
-- API keys are stored locally and only used for OpenAI API calls
+- API keys are stored locally and only used for Google AI Studio API calls
 - SEC filings are public data
-- No user data is transmitted to third parties except OpenAI
+- No user data is transmitted to third parties except Google AI Studio
 - All data processing can be done locally
 
 ## 📝 Development
@@ -265,8 +265,8 @@ LLM_MODEL=gpt-3.5-turbo
 
 ### Common Issues
 
-1. **"OpenAI API key not set"**
-   - Ensure `.env` file exists with valid `OPENAI_API_KEY`
+1. **"Google AI Studio API key not set"**
+   - Ensure `.env` file exists with valid `GOOGLE_AI_STUDIO_API_KEY`
    - Or set it in the Streamlit sidebar
 
 2. **"No filings found for ticker"**
@@ -275,7 +275,7 @@ LLM_MODEL=gpt-3.5-turbo
    - Ensure internet connectivity
 
 3. **"Error generating embeddings"**
-   - Verify OpenAI API key is valid
+   - Verify Google AI Studio API key is valid
    - Check API rate limits
    - Ensure sufficient API credits
 
@@ -300,7 +300,7 @@ This project is for educational and research purposes.
 ## 🙏 Acknowledgments
 
 - **LangChain**: Framework for LLM applications
-- **OpenAI**: GPT models and embeddings
+- **Google AI Studio**: Gemini models and embeddings
 - **ChromaDB**: Vector database
 - **Streamlit**: Web framework
 - **SEC EDGAR**: Financial data source

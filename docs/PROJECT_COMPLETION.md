@@ -34,7 +34,7 @@ Successfully implemented a complete AI-powered financial analysis system that le
   - Configurable chunk size and overlap
   - Metadata preservation during chunking
 - [x] Implemented `rag_engine/embeddings.py`
-  - OpenAI embedding generation
+  - Google AI embedding generation
   - Batch processing support
 - [x] Implemented `rag_engine/vector_store.py`
   - ChromaDB integration
@@ -45,7 +45,7 @@ Successfully implemented a complete AI-powered financial analysis system that le
 
 ### ✅ Phase 4: AI Agent Module
 - [x] Implemented `agent/financial_agent.py`
-- [x] LangChain-based agent with OpenAI
+- [x] LangChain-based agent with Google AI Studio
 - [x] Custom tools:
   - search_financial_filings
   - search_ticker_specific
@@ -140,7 +140,7 @@ Successfully implemented a complete AI-powered financial analysis system that le
 
 - **Python 3.12+**: Core language
 - **LangChain**: LLM framework and agent orchestration
-- **OpenAI**: GPT models and embeddings
+- **Google AI Studio**: Gemini models and embeddings
 - **ChromaDB**: Vector database for embeddings
 - **Streamlit**: Web interface
 - **sec-edgar-downloader**: SEC filing fetcher
@@ -158,7 +158,7 @@ Successfully implemented a complete AI-powered financial analysis system that le
 2. **Intelligent Document Processing**
    - Recursive character text splitting
    - Configurable chunking (1000 chars, 200 overlap)
-   - OpenAI embeddings (text-embedding-ada-002)
+   - Google AI embeddings (models/embedding-001)
    - Vector storage in ChromaDB
 
 3. **AI-Powered Analysis**
@@ -288,7 +288,7 @@ The project demonstrates proficiency in:
 - AI/ML (RAG, embeddings, LLMs)
 - Software engineering (modular design, testing, documentation)
 - Full-stack development (backend + frontend)
-- API integration (OpenAI, SEC EDGAR)
+- API integration (Google AI Studio, SEC EDGAR)
 - Database management (ChromaDB)
 - Web development (Streamlit)
 

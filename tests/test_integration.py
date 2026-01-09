@@ -11,8 +11,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 @pytest.mark.skipif(
-    not os.getenv("OPENAI_API_KEY"),
-    reason="OpenAI API key required for integration tests"
+    not os.getenv("GOOGLE_AI_STUDIO_API_KEY"),
+    reason="Google AI Studio API key required for integration tests"
 )
 class TestIntegration:
     """Integration tests for the complete system."""

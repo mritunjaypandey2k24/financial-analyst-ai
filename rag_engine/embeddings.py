@@ -1,10 +1,10 @@
 """
 Embeddings Module
 
-Generates embeddings using OpenAI's embedding models.
+Generates embeddings using Google AI Studio's embedding models.
 """
 from typing import List
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 import config
 import logging
 
@@ -13,23 +13,23 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingGenerator:
-    """Generates embeddings for text chunks using OpenAI."""
+    """Generates embeddings for text chunks using Google AI Studio."""
     
     def __init__(self, model: str = None):
         """
         Initialize the embedding generator.
         
         Args:
-            model: OpenAI embedding model name
+            model: Google AI embedding model name
         """
         self.model = model or config.EMBEDDING_MODEL
         
-        if not config.OPENAI_API_KEY:
-            logger.warning("OPENAI_API_KEY not set. Embeddings will fail without it.")
+        if not config.GOOGLE_AI_STUDIO_API_KEY:
+            logger.warning("GOOGLE_AI_STUDIO_API_KEY not set. Embeddings will fail without it.")
         
-        self.embeddings = OpenAIEmbeddings(
+        self.embeddings = GoogleGenerativeAIEmbeddings(
             model=self.model,
-            openai_api_key=config.OPENAI_API_KEY
+            google_api_key=config.GOOGLE_AI_STUDIO_API_KEY
         )
     
     def generate_embedding(self, text: str) -> List[float]:
@@ -84,7 +84,7 @@ def main():
         print(f"Embedding dimension: {len(embeddings[0])}")
     except Exception as e:
         print(f"Failed to generate embeddings: {e}")
-        print("Make sure OPENAI_API_KEY is set in .env file")
+        print("Make sure GOOGLE_AI_STUDIO_API_KEY is set in .env file")
 
 
 if __name__ == "__main__":

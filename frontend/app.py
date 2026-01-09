@@ -147,14 +147,14 @@ def main():
     st.sidebar.title("⚙️ Configuration")
     
     # API Key check
-    if not config.OPENAI_API_KEY or config.OPENAI_API_KEY == "":
-        st.sidebar.error("⚠️ OpenAI API Key not configured!")
-        st.sidebar.info("Please set OPENAI_API_KEY in your .env file")
+    if not config.GOOGLE_AI_STUDIO_API_KEY or config.GOOGLE_AI_STUDIO_API_KEY == "":
+        st.sidebar.error("⚠️ Google AI Studio API Key not configured!")
+        st.sidebar.info("Please set GOOGLE_AI_STUDIO_API_KEY in your .env file")
         api_key = st.sidebar.text_input("Or enter API key here:", type="password")
         if api_key:
-            config.OPENAI_API_KEY = api_key
+            config.GOOGLE_AI_STUDIO_API_KEY = api_key
     else:
-        st.sidebar.success("✓ OpenAI API Key configured")
+        st.sidebar.success("✓ Google AI Studio API Key configured")
     
     # Ticker selection
     st.sidebar.subheader("📈 Select Companies")
@@ -205,7 +205,7 @@ def main():
         st.markdown('<div class="info-box">', unsafe_allow_html=True)
         st.markdown("""
         **How to use:**
-        1. Configure your OpenAI API key in the sidebar
+        1. Configure your Google AI Studio API key in the sidebar
         2. Select companies to analyze
         3. Click "Fetch & Index Filings" to download and process SEC 10-K filings
         4. Ask questions about the companies' financial data
@@ -281,7 +281,7 @@ def main():
         
         ### 🛠️ Technology Stack
         - **LangChain**: Framework for building LLM applications
-        - **OpenAI**: GPT models for analysis and embeddings
+        - **Google AI Studio (Gemini)**: AI models for analysis and embeddings
         - **ChromaDB**: Vector database for efficient document retrieval
         - **Streamlit**: Interactive web interface
         - **SEC EDGAR**: Source of financial filings
@@ -294,7 +294,7 @@ def main():
         - Visual representations of financial data
         
         ### 🔒 Privacy
-        - Your API key is stored locally and never transmitted except to OpenAI
+        - Your API key is stored locally and never transmitted except to Google AI Studio
         - SEC filings are publicly available data
         - All processing happens on your machine or authorized cloud services
         
@@ -310,7 +310,7 @@ def main():
         st.markdown("""
         1. **Data Ingestion**: Fetches 10-K filings from SEC EDGAR
         2. **RAG Engine**: Processes documents, creates embeddings, stores in ChromaDB
-        3. **AI Agent**: Uses OpenAI LLM with access to RAG tools for intelligent analysis
+        3. **AI Agent**: Uses Google AI Studio LLM with access to RAG tools for intelligent analysis
         4. **Frontend**: Streamlit interface for user interaction
         """)
 

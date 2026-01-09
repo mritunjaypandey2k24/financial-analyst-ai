@@ -1,11 +1,11 @@
 """
 Financial Analyst AI Agent Module
 
-Implements an intelligent agent using LangChain and OpenAI to perform
+Implements an intelligent agent using LangChain and Google AI Studio to perform
 comparative financial analysis using RAG Engine as a tool.
 """
 from typing import List, Dict, Optional
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.tools import Tool
 from langgraph.prebuilt import create_react_agent
 import config
@@ -32,14 +32,14 @@ class FinancialAnalystAgent:
         """
         self.rag_engine = rag_engine
         
-        if not config.OPENAI_API_KEY:
-            logger.warning("OPENAI_API_KEY not set. Agent will not work properly.")
+        if not config.GOOGLE_AI_STUDIO_API_KEY:
+            logger.warning("GOOGLE_AI_STUDIO_API_KEY not set. Agent will not work properly.")
         
         # Initialize LLM
-        self.llm = ChatOpenAI(
+        self.llm = ChatGoogleGenerativeAI(
             model=config.LLM_MODEL,
             temperature=0,
-            openai_api_key=config.OPENAI_API_KEY
+            google_api_key=config.GOOGLE_AI_STUDIO_API_KEY
         )
         
         # Create tools

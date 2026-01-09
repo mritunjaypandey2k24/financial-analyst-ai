@@ -15,10 +15,10 @@ CHROMA_DB_DIR = Path(os.getenv("CHROMA_DB_DIR", BASE_DIR / "data" / "chroma_db")
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 CHROMA_DB_DIR.mkdir(parents=True, exist_ok=True)
 
-# OpenAI Configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002")
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-3.5-turbo")
+# Google AI Studio Configuration
+GOOGLE_AI_STUDIO_API_KEY = os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/embedding-001")
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-1.5-flash")
 
 # SEC EDGAR Configuration
 USER_AGENT = os.getenv("USER_AGENT", "Financial Analyst AI research@example.com")
