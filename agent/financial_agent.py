@@ -7,7 +7,7 @@ comparative financial analysis using RAG Engine as a tool.
 from typing import List, Dict, Optional
 from langchain_openai import ChatOpenAI
 from langchain.agents import Tool, AgentExecutor, create_openai_functions_agent
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import config
 import logging
 
