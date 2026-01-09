@@ -11,7 +11,6 @@ from langchain_openai import OpenAIEmbeddings
 import config
 import logging
 from .text_splitter import DocumentChunker
-from .embeddings import EmbeddingGenerator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
