@@ -126,6 +126,11 @@ class RAGEngine:
         """Search for relevant documents using similarity search."""
         k = k or config.TOP_K_RESULTS
         
+        # Check if vector store has any documents
+        if not self.has_documents():
+            logger.warning("Vector store is empty. No documents to search.")
+            return []
+        
         try:
             if filter_dict:
                 results = self.vector_store.similarity_search_with_score(
@@ -155,10 +160,14 @@ class RAGEngine:
     
     def get_context_for_query(self, query: str, k: int = None) -> str:
         """Get formatted context for a query."""
+        # Check if there are any documents first
+        if not self.has_documents():
+            return "No documents available. Please fetch and index SEC 10-K filings first."
+        
         results = self.search(query, k=k)
         
         if not results:
-            return "No relevant context found."
+            return "No relevant context found for this query. Try rephrasing or ensure the relevant companies' filings are indexed."
         
         context_parts = []
         for i, result in enumerate(results, 1):
@@ -169,6 +178,20 @@ class RAGEngine:
             )
         
         return "\n".join(context_parts)
+    
+    def get_document_count(self) -> int:
+        """Get the number of documents in the vector store."""
+        try:
+            # Access the underlying ChromaDB collection
+            collection = self.vector_store._collection
+            return collection.count()
+        except Exception as e:
+            logger.error(f"Error getting document count: {str(e)}")
+            return 0
+    
+    def has_documents(self) -> bool:
+        """Check if the vector store contains any documents."""
+        return self.get_document_count() > 0
     
     def clear_collection(self) -> None:
         """Clear all documents from the collection."""
