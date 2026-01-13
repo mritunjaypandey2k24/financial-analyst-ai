@@ -147,11 +147,35 @@ print(response)
 
 ### Example Queries
 
-- "What was Apple's revenue in 2022?"
+The system works best with specific, well-formatted queries. Here are examples:
+
+#### Single Company Queries
+- "What was Apple's revenue in fiscal year 2022?"
+- "What was the total revenue of AAPL in fiscal year 2022 according to the 10-K filings?"
+- "How much did Microsoft earn in 2022?"
+- "What are Google's main sources of revenue?"
+- "What were Amazon's operating expenses in fiscal year 2021?"
+
+#### Comparative Queries
 - "Compare AAPL and MSFT revenues in fiscal year 2022"
+- "How do Apple and Microsoft profit margins compare?"
+- "Which had higher growth: Amazon or Google?"
+
+#### Trend Analysis
+- "How did Apple's revenue change year-over-year?"
+- "What is the growth trend for Microsoft's cloud business?"
+
+#### Risk and Strategy
 - "What are the main risk factors for Microsoft?"
-- "How did Google's operating income change year-over-year?"
-- "Compare profit margins between Apple and Amazon"
+- "What is Apple's strategy for expanding services revenue?"
+
+**Query Best Practices:**
+- ✅ Include specific company names or ticker symbols (AAPL, MSFT, GOOGL, AMZN)
+- ✅ Specify time periods (fiscal year 2022, FY2022, 2021-2022)
+- ✅ Mention specific metrics (revenue, net income, profit margin, expenses)
+- ✅ Be explicit about what you're comparing
+- ❌ Avoid vague queries like "Tell me about Apple"
+- ❌ Don't ask about companies without indexed filings
 
 ## 🧪 Testing
 
@@ -268,20 +292,51 @@ LLM_MODEL=gemini-1.5-flash
 1. **"Google AI Studio API key not set"**
    - Ensure `.env` file exists with valid `GOOGLE_AI_STUDIO_API_KEY`
    - Or set it in the Streamlit sidebar
+   - Get your key from [Google AI Studio](https://aistudio.google.com/app/apikey)
 
 2. **"No filings found for ticker"**
-   - Check ticker symbol is valid
-   - Some companies may not have recent 10-K filings
-   - Ensure internet connectivity
+   - Check ticker symbol is valid (use standard symbols: AAPL, MSFT, GOOGL, AMZN)
+   - Some companies may not have recent 10-K filings available
+   - Ensure internet connectivity for SEC EDGAR access
+   - Try fetching again if initial attempt failed
 
 3. **"Error generating embeddings"**
-   - Verify Google AI Studio API key is valid
-   - Check API rate limits
-   - Ensure sufficient API credits
+   - Verify Google AI Studio API key is valid and active
+   - Check API rate limits - the free tier has usage restrictions
+   - Ensure sufficient API credits/quota available
+   - Wait 15-30 seconds between large indexing operations
 
-4. **ChromaDB errors**
+4. **"Empty or no response from query"**
+   - **Ensure documents are indexed**: Check that "Fetch & Index Filings" completed successfully
+   - **Use specific queries**: Include company name/ticker and specific metric (e.g., "AAPL revenue 2022")
+   - **Check indexed companies**: Only query companies whose filings you've indexed
+   - **Verify document count**: Check if the vector database shows indexed documents
+   - **Try rephrasing**: Use more specific terms (e.g., "fiscal year 2022" instead of "2022")
+
+5. **"Query returns wrong information"**
+   - Be more specific with time periods (use "fiscal year 2022" not just "2022")
+   - Include both company ticker and full name for clarity
+   - Check if you're comparing the right companies
+   - Ensure the indexed filings cover the time period you're asking about
+
+6. **ChromaDB errors**
    - Delete `data/chroma_db` directory and reinitialize
-   - Check write permissions
+   - Check write permissions in the data directory
+   - Ensure sufficient disk space
+
+7. **"Rate limit exceeded" or "429 errors"**
+   - Google AI Free tier has strict rate limits
+   - Wait 15-30 seconds between operations
+   - Reduce batch size when indexing large documents
+   - Consider upgrading to a paid API tier for production use
+
+### Performance Tips
+
+- **Index fewer filings initially**: Start with 1 filing per company to test
+- **Use specific queries**: More specific = better results
+- **Wait between operations**: Give the API time to process
+- **Clear old data**: Remove old vector store data before re-indexing
+- **Monitor token usage**: Large documents consume more tokens
 
 ## 🤝 Contributing
 
