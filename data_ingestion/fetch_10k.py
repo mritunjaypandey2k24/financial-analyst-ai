@@ -34,26 +34,39 @@ class SECFilingFetcher:
         # ---------------------------------------------------------
         user_agent = config.USER_AGENT
         
+        # Parse the user agent string
         try:
             # Support "Name <email>" format (Standard)
-            if '<' in user_agent:
-                company, email = user_agent.split('<')
-                email = email.strip('>')
-                company = company.strip()
+            if '<' in user_agent and '>' in user_agent:
+                # Split on first '<' to handle edge cases
+                parts = user_agent.split('<', 1)
+                company = parts[0].strip()
+                # Extract email between < and >
+                email = parts[1].split('>')[0].strip()
             # Support "Name email" format (Legacy)
-            else:
+            elif ' ' in user_agent:
                 company, email = user_agent.rsplit(' ', 1)
+            else:
+                raise ValueError("Could not parse user agent")
                 
+            if not company or not email or '@' not in email:
+                raise ValueError("Invalid company or email format")
+        except Exception as e:
+            logger.error(f"Failed to parse USER_AGENT from .env: {user_agent}")
+            raise ValueError("Invalid USER_AGENT in .env. Format should be: Name <email@domain.com>")
+        
+        # Initialize the SEC downloader
+        try:
             logger.info(f"Initializing SEC Downloader with: {company} | {email}")
-            
             self.downloader = Downloader(
                 company, 
                 email, 
                 str(self.data_dir)
             )
         except Exception as e:
-            logger.error(f"Failed to parse USER_AGENT from .env: {user_agent}")
-            raise ValueError("Invalid USER_AGENT in .env. Format should be: Name <email@domain.com>")
+            logger.error(f"Failed to initialize SEC Downloader: {str(e)}")
+            # Re-raise the actual error instead of masking it
+            raise
         
     def fetch_10k_filing(self, ticker: str, num_filings: int = 1) -> List[Dict[str, str]]:
         """
