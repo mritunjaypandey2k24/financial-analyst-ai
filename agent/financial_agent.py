@@ -21,6 +21,11 @@ class FinancialAnalystAgent:
     AI Agent for financial analysis and comparative queries.
     """
     
+    # Rate limiting configuration constants
+    MAX_RETRIES = 3
+    BASE_WAIT_TIME = 60  # seconds, increased from 15s
+    MIN_WAIT_BETWEEN_CALLS = 10  # seconds, proactive rate limiting
+    
     def __init__(self, rag_engine):
         self.rag_engine = rag_engine
         
@@ -204,22 +209,21 @@ Remember: Users expect precise financial data with proper attribution to source 
         logger.debug(f"Original query: {question}")
         logger.debug(f"Enhanced query: {enhanced_question}")
         
-        max_retries = 3
-        base_wait_time = 60  # Increased from 15 seconds to 60 seconds
+        # Rate limiting error patterns to detect
+        rate_limit_errors = ["429", "resource_exhausted", "quota", "rate limit"]
         
-        for attempt in range(max_retries):
+        for attempt in range(self.MAX_RETRIES):
             try:
                 # Add rate limiting - wait before each attempt to avoid hitting limits
                 current_time = time.time()
                 time_since_last_call = current_time - self.last_api_call_time
-                min_wait_between_calls = 10  # At least 10 seconds between attempts
                 
-                if time_since_last_call < min_wait_between_calls:
-                    wait_time = min_wait_between_calls - time_since_last_call
+                if time_since_last_call < self.MIN_WAIT_BETWEEN_CALLS:
+                    wait_time = self.MIN_WAIT_BETWEEN_CALLS - time_since_last_call
                     logger.info(f"Rate limiting: waiting {wait_time:.1f}s before attempt...")
                     time.sleep(wait_time)
                 
-                logger.info(f"Processing query (Attempt {attempt+1}/{max_retries})...")
+                logger.info(f"Processing query (Attempt {attempt+1}/{self.MAX_RETRIES})...")
                 self.last_api_call_time = time.time()
                 
                 response = self.agent_executor.invoke({"messages": [("user", enhanced_question)]})
@@ -255,10 +259,10 @@ Remember: Users expect precise financial data with proper attribution to source 
             except Exception as e:
                 error_msg = str(e).lower()
                 # Catch the specific Google "Speed Limit" errors
-                if "429" in error_msg or "resource_exhausted" in error_msg or "quota" in error_msg or "rate limit" in error_msg:
+                if any(pattern in error_msg for pattern in rate_limit_errors):
                     # Exponential backoff: wait longer with each retry
-                    wait_time = base_wait_time * (2 ** attempt)  # 60s, 120s, 240s
-                    logger.warning(f"⚠️ Hit Rate Limit on attempt {attempt + 1}/{max_retries}")
+                    wait_time = self.BASE_WAIT_TIME * (2 ** attempt)  # 60s, 120s, 240s
+                    logger.warning(f"⚠️ Hit Rate Limit on attempt {attempt + 1}/{self.MAX_RETRIES}")
                     print(f"⚠️ Hit Speed Limit. Pausing for {wait_time} seconds to let cool down...")
                     time.sleep(wait_time)
                     continue # Try again
