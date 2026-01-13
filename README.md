@@ -1,19 +1,22 @@
 # Financial Analyst AI
 
-An AI-powered system for analyzing SEC 10-K filings using Retrieval-Augmented Generation (RAG) and Large Language Models.
+An AI-powered system for analyzing SEC 10-K filings using Retrieval-Augmented Generation (RAG) and local Hugging Face models.
 
 ## 🎯 Overview
 
-Financial Analyst AI enables users to query and analyze SEC 10-K filings through natural language, leveraging the power of Google AI Studio's Gemini models combined with a vector database for efficient document retrieval. The system can fetch filings, process them, and answer comparative financial analysis questions.
+Financial Analyst AI enables users to query and analyze SEC 10-K filings through natural language, leveraging open-source Hugging Face models combined with a vector database for efficient document retrieval. The system runs entirely locally, providing privacy, cost-effectiveness, and unlimited usage without API rate limits.
 
 ## ✨ Features
 
 - **Automated Data Ingestion**: Fetch SEC 10-K filings directly from the EDGAR database
 - **Intelligent Document Processing**: Split and chunk documents for optimal retrieval
-- **Vector Search**: Fast similarity search using ChromaDB and Google AI embeddings
-- **AI-Powered Analysis**: Natural language queries answered by Gemini models
+- **Vector Search**: Fast similarity search using ChromaDB and local Hugging Face embeddings
+- **AI-Powered Analysis**: Natural language queries answered by local LLM models
 - **Comparative Analysis**: Compare financial metrics across multiple companies
 - **Interactive UI**: User-friendly Streamlit interface with visualizations
+- **Fully Local**: No external API dependencies, complete privacy and control
+- **No Rate Limits**: Process unlimited queries without API restrictions
+- **Cost-Free**: No API fees after initial setup
 
 ## 🏗️ Architecture
 
@@ -54,7 +57,9 @@ financial-analyst-ai/
 ### Prerequisites
 
 - Python 3.8 or higher
-- Google AI Studio API key
+- 8GB RAM minimum (16GB recommended)
+- 5GB free disk space for models
+- (Optional) NVIDIA GPU with 6GB+ VRAM for faster inference
 
 ### Installation
 
@@ -75,10 +80,18 @@ financial-analyst-ai/
    pip install -r requirements.txt
    ```
 
-4. **Configure environment variables**
+4. **Configure environment variables** (Optional)
    ```bash
    cp .env.example .env
-   # Edit .env and add your Google AI Studio API key
+   # Edit .env to customize model settings if desired
+   # Default models work well out of the box
+   ```
+
+5. **Download models on first run**
+   ```bash
+   # Models will be downloaded automatically on first use
+   # This requires internet connection initially
+   # Models are cached locally for offline use
    ```
 
 ### Running the Application
@@ -90,10 +103,11 @@ financial-analyst-ai/
 
 2. **Access the application**
    - Open your browser to `http://localhost:8501`
-   - Enter your Google AI Studio API key if not in .env
    - Select companies to analyze
    - Click "Fetch & Index Filings"
    - Start asking questions!
+
+**Note**: First run will download models (~3-4GB). This requires internet connection but only needs to be done once.
 
 ## 📖 Usage Examples
 
@@ -208,13 +222,16 @@ Fetches SEC 10-K filings from the EDGAR database using the `sec-edgar-downloader
 
 ### 2. RAG Engine Module
 
-Implements Retrieval-Augmented Generation pipeline:
+Implements Retrieval-Augmented Generation pipeline using local models:
 
 **Text Splitter**: Uses LangChain's `RecursiveCharacterTextSplitter` to chunk documents
 - Default chunk size: 1000 characters
 - Default overlap: 200 characters
 
-**Embeddings**: Generates embeddings using Google AI Studio's `models/text-embedding-004` model
+**Embeddings**: Generates embeddings using Hugging Face `sentence-transformers/all-MiniLM-L6-v2`
+- 384-dimensional embeddings
+- Fast local inference
+- No API calls or rate limits
 
 **Vector Store**: ChromaDB for efficient similarity search
 - Persistent storage
@@ -223,7 +240,12 @@ Implements Retrieval-Augmented Generation pipeline:
 
 ### 3. AI Agent Module
 
-LangChain-based agent with specialized tools:
+LangChain-based agent using local Hugging Face models with specialized tools:
+
+**Local LLM**: Uses `meta-llama/Llama-3.2-3B-Instruct` (or configured model)
+- Runs entirely on your machine
+- Optional 8-bit quantization for memory efficiency
+- GPU acceleration when available
 
 **Tools:**
 - `search_financial_filings`: Search across all indexed filings
@@ -252,23 +274,47 @@ Interactive web interface with:
 Edit `.env` file or set environment variables:
 
 ```bash
-# Required
-GOOGLE_AI_STUDIO_API_KEY=your_google_ai_studio_api_key_here
-USER_AGENT=Your Name <your_email@example.com>
+# Model Selection
+EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+LLM_MODEL=meta-llama/Llama-3.2-3B-Instruct
 
-# Optional (defaults provided)
+# Performance Settings
+USE_8BIT_QUANTIZATION=true  # Reduces memory by ~50%
+USE_GPU=true                # Enable GPU acceleration
+MAX_NEW_TOKENS=512          # Maximum response length
+TEMPERATURE=0.1             # Lower = more focused
+
+# Storage
 DATA_DIR=./data/10k_filings
 CHROMA_DB_DIR=./data/chroma_db
-EMBEDDING_MODEL=models/text-embedding-004
-LLM_MODEL=gemini-1.5-flash
+MODEL_CACHE_DIR=./data/model_cache
+
+# SEC EDGAR
+USER_AGENT=Your Name <your_email@example.com>
 ```
+
+### Model Options
+
+**Embedding Models:**
+- `sentence-transformers/all-MiniLM-L6-v2` - Default, fast and lightweight (80MB)
+- `sentence-transformers/all-mpnet-base-v2` - Higher quality (420MB)
+- `BAAI/bge-small-en-v1.5` - Good balance (130MB)
+
+**LLM Models:**
+- `meta-llama/Llama-3.2-3B-Instruct` - Default, balanced (3GB)
+- `meta-llama/Llama-3.2-1B-Instruct` - Faster, smaller (1GB)
+- `microsoft/Phi-3-mini-4k-instruct` - Compact chat model (4GB)
+- `HuggingFaceH4/zephyr-7b-beta` - Higher quality (7GB)
+
+See `HUGGINGFACE_MIGRATION_GUIDE.md` for detailed model selection guidance.
 
 ## 🔒 Security & Privacy
 
-- API keys are stored locally and only used for Google AI Studio API calls
+- All processing happens locally on your machine
+- No data is sent to external services (except SEC EDGAR for public filings)
+- Models run entirely offline after initial download
 - SEC filings are public data
-- No user data is transmitted to third parties except Google AI Studio
-- All data processing can be done locally
+- Full control over your data and computations
 
 ## 📝 Development
 
@@ -290,10 +336,10 @@ LLM_MODEL=gemini-1.5-flash
 
 ### Common Issues
 
-1. **"Google AI Studio API key not set"**
-   - Ensure `.env` file exists with valid `GOOGLE_AI_STUDIO_API_KEY`
-   - Or set it in the Streamlit sidebar
-   - Get your key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+1. **"ModuleNotFoundError" errors**
+   - Run `pip install -r requirements.txt`
+   - Ensure you're using Python 3.8+
+   - Try `pip install --upgrade -r requirements.txt`
 
 2. **"No filings found for ticker"**
    - Check ticker symbol is valid (use standard symbols: AAPL, MSFT, GOOGL, AMZN)
@@ -301,49 +347,46 @@ LLM_MODEL=gemini-1.5-flash
    - Ensure internet connectivity for SEC EDGAR access
    - Try fetching again if initial attempt failed
 
-3. **"Error generating embeddings"**
-   - Verify Google AI Studio API key is valid and active
-   - Check API rate limits - the free tier has usage restrictions
-   - Ensure sufficient API credits/quota available
-   - Wait 15-30 seconds between large indexing operations
+3. **"Out of memory" errors**
+   - Enable 8-bit quantization: `USE_8BIT_QUANTIZATION=true`
+   - Use smaller models (see configuration section)
+   - Close other applications to free RAM
+   - Reduce `BATCH_SIZE` in config.py
 
-4. **"Empty or no response from query"**
+4. **Slow inference speed**
+   - Enable GPU if available: `USE_GPU=true` and install CUDA PyTorch
+   - Use smaller/faster models like `Llama-3.2-1B-Instruct`
+   - Reduce `MAX_NEW_TOKENS` to limit response length
+   - Consider upgrading hardware
+
+5. **"Error downloading model" or connection errors**
+   - Check internet connection (only needed for first run)
+   - Models are downloaded from Hugging Face Hub
+   - Downloads resume automatically if interrupted
+   - Check firewall/proxy settings
+   - Manually download models if needed
+
+6. **"Empty or no response from query"**
    - **Ensure documents are indexed**: Check that "Fetch & Index Filings" completed successfully
    - **Use specific queries**: Include company name/ticker and specific metric (e.g., "AAPL revenue 2022")
    - **Check indexed companies**: Only query companies whose filings you've indexed
    - **Verify document count**: Check if the vector database shows indexed documents
    - **Try rephrasing**: Use more specific terms (e.g., "fiscal year 2022" instead of "2022")
 
-5. **"Query returns wrong information"**
-   - Be more specific with time periods (use "fiscal year 2022" not just "2022")
-   - Include both company ticker and full name for clarity
-   - Check if you're comparing the right companies
-   - Ensure the indexed filings cover the time period you're asking about
-
-6. **ChromaDB errors**
+7. **ChromaDB errors**
    - Delete `data/chroma_db` directory and reinitialize
    - Check write permissions in the data directory
    - Ensure sufficient disk space
 
-7. **"Rate limit exceeded" or "429 errors"**
-   - **This is common with Google AI Free tier** which has strict rate limits:
-     - Gemini 1.5 Flash: 15 requests per minute
-     - Each query makes 3-5 API calls due to the agent architecture
-   - **Automatic retry with exponential backoff**: The system now automatically waits 60s, 120s, then 240s between retries
-   - **What to do**:
-     - Wait 2-3 minutes before trying again (the system handles this automatically)
-     - Simplify your query to use fewer tool calls
-     - Avoid making multiple rapid queries in succession
-     - Consider upgrading to a paid API tier for production use with heavy traffic
-   - **See `RATE_LIMITING_FIX.md`** for detailed information about rate limiting strategy
-
 ### Performance Tips
 
+- **First run**: Models download automatically (~3-4GB), requires internet
+- **Use GPU**: Install CUDA PyTorch for 5-10x speedup
+- **Enable quantization**: Set `USE_8BIT_QUANTIZATION=true` to reduce memory
+- **Choose appropriate models**: Balance between quality and speed for your hardware
 - **Index fewer filings initially**: Start with 1 filing per company to test
 - **Use specific queries**: More specific = better results
-- **Wait between operations**: Give the API time to process
 - **Clear old data**: Remove old vector store data before re-indexing
-- **Monitor token usage**: Large documents consume more tokens
 
 ## 🤝 Contributing
 
@@ -361,11 +404,14 @@ This project is for educational and research purposes.
 
 ## 🙏 Acknowledgments
 
+- **Hugging Face**: Transformers library and model hub
 - **LangChain**: Framework for LLM applications
-- **Google AI Studio**: Gemini models and embeddings
+- **Sentence Transformers**: Embedding models
 - **ChromaDB**: Vector database
 - **Streamlit**: Web framework
 - **SEC EDGAR**: Financial data source
+- **Meta AI**: Llama models
+- **Microsoft**: Phi models
 
 ## 📧 Contact
 
