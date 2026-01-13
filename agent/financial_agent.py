@@ -32,10 +32,13 @@ class FinancialAnalystAgent:
             model=config.LLM_MODEL,
             temperature=0,
             google_api_key=config.GOOGLE_AI_STUDIO_API_KEY,
-            # We handle retries manually for better control over the 15s wait
-            max_retries=1, 
-            request_timeout=60
+            # We handle retries manually for better control over rate limits
+            max_retries=0,  # Disable internal retries, we handle it ourselves
+            request_timeout=90  # Longer timeout for free tier
         )
+        
+        # Track last API call time for rate limiting
+        self.last_api_call_time = 0
         
         self.tools = self._create_tools()
         self.agent_executor = self._create_agent()
@@ -85,8 +88,8 @@ class FinancialAnalystAgent:
             if not self.rag_engine.has_documents():
                 return "No documents available. Please fetch and index SEC 10-K filings first before querying."
             
-            # Lower k to 3 to save tokens and avoid limits
-            context = self.rag_engine.get_context_for_query(query, k=3)
+            # Lower k to 2 to save tokens and avoid limits (reduced from 3)
+            context = self.rag_engine.get_context_for_query(query, k=2)
             return context
         except Exception as e:
             logger.error(f"Error in _search_filings: {str(e)}")
@@ -106,7 +109,7 @@ class FinancialAnalystAgent:
             ticker = parts[0].replace("ticker:", "").strip()
             query = parts[1].strip()
             
-            results = self.rag_engine.search_by_ticker(query, ticker, k=3)
+            results = self.rag_engine.search_by_ticker(query, ticker, k=2)  # Reduced from 3
             if not results:
                 return f"No information found for {ticker}. Ensure this company's filings are indexed."
             
@@ -132,9 +135,9 @@ class FinancialAnalystAgent:
             if len(tickers) < 2:
                 return "Need at least two tickers to compare. Format: 'ticker1:AAPL ticker2:MSFT query:your question'"
             
-            # Very conservative search to avoid token limits
-            results1 = self.rag_engine.search_by_ticker(query, tickers[0], k=2)
-            results2 = self.rag_engine.search_by_ticker(query, tickers[1], k=2)
+            # Very conservative search to avoid token limits (reduced to k=1)
+            results1 = self.rag_engine.search_by_ticker(query, tickers[0], k=1)
+            results2 = self.rag_engine.search_by_ticker(query, tickers[1], k=1)
             
             if not results1 and not results2:
                 return f"No information found for {tickers[0]} or {tickers[1]}. Ensure these companies' filings are indexed."
@@ -202,10 +205,22 @@ Remember: Users expect precise financial data with proper attribution to source 
         logger.debug(f"Enhanced query: {enhanced_question}")
         
         max_retries = 3
+        base_wait_time = 60  # Increased from 15 seconds to 60 seconds
         
         for attempt in range(max_retries):
             try:
+                # Add rate limiting - wait before each attempt to avoid hitting limits
+                current_time = time.time()
+                time_since_last_call = current_time - self.last_api_call_time
+                min_wait_between_calls = 10  # At least 10 seconds between attempts
+                
+                if time_since_last_call < min_wait_between_calls:
+                    wait_time = min_wait_between_calls - time_since_last_call
+                    logger.info(f"Rate limiting: waiting {wait_time:.1f}s before attempt...")
+                    time.sleep(wait_time)
+                
                 logger.info(f"Processing query (Attempt {attempt+1}/{max_retries})...")
+                self.last_api_call_time = time.time()
                 
                 response = self.agent_executor.invoke({"messages": [("user", enhanced_question)]})
                 
@@ -240,15 +255,19 @@ Remember: Users expect precise financial data with proper attribution to source 
             except Exception as e:
                 error_msg = str(e).lower()
                 # Catch the specific Google "Speed Limit" errors
-                if "429" in error_msg or "resource_exhausted" in error_msg or "quota" in error_msg:
-                    print(f"⚠️ Hit Speed Limit. Pausing for 15 seconds to let cool down...")
-                    time.sleep(15)  # The magic fix: Wait longer than the error suggests
+                if "429" in error_msg or "resource_exhausted" in error_msg or "quota" in error_msg or "rate limit" in error_msg:
+                    # Exponential backoff: wait longer with each retry
+                    wait_time = base_wait_time * (2 ** attempt)  # 60s, 120s, 240s
+                    logger.warning(f"⚠️ Hit Rate Limit on attempt {attempt + 1}/{max_retries}")
+                    print(f"⚠️ Hit Speed Limit. Pausing for {wait_time} seconds to let cool down...")
+                    time.sleep(wait_time)
                     continue # Try again
                 else:
                     logger.error(f"Error: {e}")
                     return f"Error processing query: {str(e)}. Please ensure your question includes specific company names and financial metrics."
         
-        return "I am currently overloaded with requests. Please wait 1 minute and try again."
+        # If all retries failed due to rate limits
+        return "The Google AI API is currently rate-limited. This is common with the free tier when making multiple requests. Please wait 2-3 minutes before trying again. Consider simplifying your query to use fewer API calls."
     
     def _enhance_query(self, question: str) -> str:
         """

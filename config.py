@@ -17,7 +17,7 @@ CHROMA_DB_DIR.mkdir(parents=True, exist_ok=True)
 
 # Google AI Studio Configuration
 GOOGLE_AI_STUDIO_API_KEY = os.getenv("GOOGLE_AI_STUDIO_API_KEY", "")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/embedding-001")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
 LLM_MODEL = os.getenv("LLM_MODEL", "gemini-1.5-flash")
 
 # SEC EDGAR Configuration
@@ -26,7 +26,7 @@ USER_AGENT = os.getenv("USER_AGENT", "Financial Analyst AI research@example.com"
 # RAG Configuration
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
-TOP_K_RESULTS = 3
+TOP_K_RESULTS = 2  # Reduced from 3 to minimize token usage
 
 # Predefined tickers for analysis
 DEFAULT_TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN"]
