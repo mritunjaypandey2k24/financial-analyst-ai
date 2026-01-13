@@ -133,24 +133,18 @@ class LocalLLM:
             Generated text
         """
         try:
-            # Update max_new_tokens if provided
-            original_max = self.pipeline.task_kwargs.get('max_new_tokens')
-            if max_new_tokens:
-                self.pipeline.task_kwargs['max_new_tokens'] = max_new_tokens
+            # Use provided max_new_tokens or default from config
+            tokens = max_new_tokens if max_new_tokens is not None else config.MAX_NEW_TOKENS
             
-            # Generate
-            result = self.pipeline(prompt)
-            
-            # Restore original max_new_tokens
-            if max_new_tokens and original_max:
-                self.pipeline.task_kwargs['max_new_tokens'] = original_max
+            # Generate with explicit parameters (thread-safe)
+            result = self.pipeline(
+                prompt,
+                max_new_tokens=tokens,
+                return_full_text=False  # Only return generated text
+            )
             
             # Extract generated text
             generated_text = result[0]['generated_text']
-            
-            # Remove the prompt from the output if present
-            if generated_text.startswith(prompt):
-                generated_text = generated_text[len(prompt):].strip()
             
             return generated_text
             

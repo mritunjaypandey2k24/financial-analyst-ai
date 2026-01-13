@@ -30,15 +30,19 @@ LLM_MODEL = os.getenv(
     "meta-llama/Llama-3.2-3B-Instruct"  # Lightweight instruction-tuned model
 )
 
-# Alternative models that can be used:
-# For embeddings:
-#   - "sentence-transformers/all-mpnet-base-v2" (higher quality, slower)
-#   - "BAAI/bge-small-en-v1.5" (good balance)
-#   - "sentence-transformers/all-MiniLM-L6-v2" (fast, smaller)
-# For LLM:
-#   - "microsoft/Phi-3-mini-4k-instruct" (3.8B params, good for chat)
-#   - "meta-llama/Llama-3.2-1B-Instruct" (1B params, very fast)
-#   - "HuggingFaceH4/zephyr-7b-beta" (7B params, high quality)
+# Available model configurations for easy switching
+AVAILABLE_EMBEDDING_MODELS = {
+    "fast": "sentence-transformers/all-MiniLM-L6-v2",  # 80MB, 384 dim
+    "balanced": "BAAI/bge-small-en-v1.5",  # 130MB, 384 dim
+    "quality": "sentence-transformers/all-mpnet-base-v2",  # 420MB, 768 dim
+}
+
+AVAILABLE_LLM_MODELS = {
+    "tiny": "meta-llama/Llama-3.2-1B-Instruct",  # 1B params, very fast
+    "small": "meta-llama/Llama-3.2-3B-Instruct",  # 3B params, balanced
+    "medium": "microsoft/Phi-3-mini-4k-instruct",  # 3.8B params, good for chat
+    "large": "HuggingFaceH4/zephyr-7b-beta",  # 7B params, high quality
+}
 
 # Model loading configuration
 USE_8BIT_QUANTIZATION = os.getenv("USE_8BIT_QUANTIZATION", "true").lower() == "true"
