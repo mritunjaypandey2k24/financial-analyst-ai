@@ -270,22 +270,27 @@ def main():
                             # Get response from agent
                             response = agent.query(query.strip())
                             
-                            # Display response
-                            st.subheader("📊 Analysis Result")
-                            st.markdown(response)
-                            
-                            # Try to extract numerical data for visualization
-                            # This is a simple example - you could enhance this with more sophisticated parsing
-                            st.divider()
-                            st.subheader("📈 Visualization")
-                            
-                            # Example: Create a simple visualization placeholder
-                            st.info("💡 Tip: For numeric comparisons, visualizations will be generated automatically.")
-                            
-                            # You could add logic here to parse response and create charts
-                            # For demonstration, show a sample chart structure
-                            if "compare" in query.lower() or "versus" in query.lower():
-                                st.caption("Chart would appear here based on extracted data")
+                            # Check if response is empty or None
+                            if not response or not response.strip():
+                                st.error("❌ No response generated. The AI agent did not produce any output.")
+                                st.info("💡 This may happen if:\n- The query is too complex\n- The relevant information is not in the indexed documents\n- There was a timeout or rate limit issue\n\nTry:\n- Rephrasing your query to be more specific\n- Ensuring the relevant company filings are indexed\n- Waiting a moment and trying again")
+                            else:
+                                # Display response
+                                st.subheader("📊 Analysis Result")
+                                st.markdown(response)
+                                
+                                # Try to extract numerical data for visualization
+                                # This is a simple example - you could enhance this with more sophisticated parsing
+                                st.divider()
+                                st.subheader("📈 Visualization")
+                                
+                                # Example: Create a simple visualization placeholder
+                                st.info("💡 Tip: For numeric comparisons, visualizations will be generated automatically.")
+                                
+                                # You could add logic here to parse response and create charts
+                                # For demonstration, show a sample chart structure
+                                if "compare" in query.lower() or "versus" in query.lower():
+                                    st.caption("Chart would appear here based on extracted data")
                         
                         except Exception as e:
                             st.error(f"❌ Error processing query: {str(e)}")
