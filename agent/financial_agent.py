@@ -21,10 +21,13 @@ class FinancialAnalystAgent:
     AI Agent for financial analysis and comparative queries.
     """
     
-    # Rate limiting configuration constants
-    MAX_RETRIES = 3
-    BASE_WAIT_TIME = 60  # seconds, increased from 15s
-    MIN_WAIT_BETWEEN_CALLS = 10  # seconds, proactive rate limiting
+    # Rate limiting configuration constants (can be overridden via config.py)
+    MAX_RETRIES = config.MAX_RETRIES
+    BASE_WAIT_TIME = config.BASE_WAIT_TIME  # seconds
+    MIN_WAIT_BETWEEN_CALLS = config.MIN_WAIT_BETWEEN_CALLS  # seconds
+    
+    # Rate limit error patterns to detect
+    RATE_LIMIT_ERROR_PATTERNS = ["429", "resource_exhausted", "quota", "rate limit"]
     
     def __init__(self, rag_engine):
         self.rag_engine = rag_engine
@@ -209,9 +212,6 @@ Remember: Users expect precise financial data with proper attribution to source 
         logger.debug(f"Original query: {question}")
         logger.debug(f"Enhanced query: {enhanced_question}")
         
-        # Rate limiting error patterns to detect
-        rate_limit_errors = ["429", "resource_exhausted", "quota", "rate limit"]
-        
         for attempt in range(self.MAX_RETRIES):
             try:
                 # Add rate limiting - wait before each attempt to avoid hitting limits
@@ -259,7 +259,7 @@ Remember: Users expect precise financial data with proper attribution to source 
             except Exception as e:
                 error_msg = str(e).lower()
                 # Catch the specific Google "Speed Limit" errors
-                if any(pattern in error_msg for pattern in rate_limit_errors):
+                if any(pattern in error_msg for pattern in self.RATE_LIMIT_ERROR_PATTERNS):
                     # Exponential backoff: wait longer with each retry
                     wait_time = self.BASE_WAIT_TIME * (2 ** attempt)  # 60s, 120s, 240s
                     logger.warning(f"⚠️ Hit Rate Limit on attempt {attempt + 1}/{self.MAX_RETRIES}")

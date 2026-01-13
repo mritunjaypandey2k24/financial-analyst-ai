@@ -28,5 +28,10 @@ CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 TOP_K_RESULTS = 2  # Reduced from 3 to minimize token usage
 
+# Rate Limiting Configuration (for FinancialAnalystAgent)
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
+BASE_WAIT_TIME = int(os.getenv("BASE_WAIT_TIME", "60"))  # seconds
+MIN_WAIT_BETWEEN_CALLS = int(os.getenv("MIN_WAIT_BETWEEN_CALLS", "10"))  # seconds
+
 # Predefined tickers for analysis
 DEFAULT_TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN"]
