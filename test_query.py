@@ -4,6 +4,7 @@ Creates mock financial data and tests RAG engine and agent queries.
 """
 import sys
 import os
+import time
 from pathlib import Path
 
 # Add parent directory to path
@@ -15,6 +16,9 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Configuration constants
+QUERY_DELAY_SECONDS = 3  # Delay between queries to avoid rate limits
 
 
 def create_mock_documents():
@@ -248,8 +252,7 @@ def test_agent_queries():
                     logger.info(f"✅ Query {i} completed successfully")
                 
                 # Add delay between queries to avoid rate limits
-                import time
-                time.sleep(3)
+                time.sleep(QUERY_DELAY_SECONDS)
                 
             except Exception as e:
                 logger.error(f"❌ Query {i} failed with exception: {e}")
@@ -299,4 +302,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())
