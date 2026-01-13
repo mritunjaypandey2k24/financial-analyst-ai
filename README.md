@@ -214,7 +214,7 @@ Implements Retrieval-Augmented Generation pipeline:
 - Default chunk size: 1000 characters
 - Default overlap: 200 characters
 
-**Embeddings**: Generates embeddings using Google AI Studio's `models/embedding-001` model
+**Embeddings**: Generates embeddings using Google AI Studio's `models/text-embedding-004` model
 
 **Vector Store**: ChromaDB for efficient similarity search
 - Persistent storage
@@ -254,11 +254,12 @@ Edit `.env` file or set environment variables:
 ```bash
 # Required
 GOOGLE_AI_STUDIO_API_KEY=your_google_ai_studio_api_key_here
+USER_AGENT=Your Name <your_email@example.com>
 
 # Optional (defaults provided)
 DATA_DIR=./data/10k_filings
 CHROMA_DB_DIR=./data/chroma_db
-EMBEDDING_MODEL=models/embedding-001
+EMBEDDING_MODEL=models/text-embedding-004
 LLM_MODEL=gemini-1.5-flash
 ```
 
@@ -325,10 +326,16 @@ LLM_MODEL=gemini-1.5-flash
    - Ensure sufficient disk space
 
 7. **"Rate limit exceeded" or "429 errors"**
-   - Google AI Free tier has strict rate limits
-   - Wait 15-30 seconds between operations
-   - Reduce batch size when indexing large documents
-   - Consider upgrading to a paid API tier for production use
+   - **This is common with Google AI Free tier** which has strict rate limits:
+     - Gemini 1.5 Flash: 15 requests per minute
+     - Each query makes 3-5 API calls due to the agent architecture
+   - **Automatic retry with exponential backoff**: The system now automatically waits 60s, 120s, then 240s between retries
+   - **What to do**:
+     - Wait 2-3 minutes before trying again (the system handles this automatically)
+     - Simplify your query to use fewer tool calls
+     - Avoid making multiple rapid queries in succession
+     - Consider upgrading to a paid API tier for production use with heavy traffic
+   - **See `RATE_LIMITING_FIX.md`** for detailed information about rate limiting strategy
 
 ### Performance Tips
 
