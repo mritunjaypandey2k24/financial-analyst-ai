@@ -146,15 +146,16 @@ def main():
     # Sidebar
     st.sidebar.title("⚙️ Configuration")
     
-    # API Key check
-    if not config.GOOGLE_AI_STUDIO_API_KEY or config.GOOGLE_AI_STUDIO_API_KEY == "":
-        st.sidebar.error("⚠️ Google AI Studio API Key not configured!")
-        st.sidebar.info("Please set GOOGLE_AI_STUDIO_API_KEY in your .env file")
-        api_key = st.sidebar.text_input("Or enter API key here:", type="password")
-        if api_key:
-            config.GOOGLE_AI_STUDIO_API_KEY = api_key
-    else:
-        st.sidebar.success("✓ Google AI Studio API Key configured")
+    # Model Configuration Info
+    st.sidebar.info(f"""
+    **🤖 Local Models**
+    
+    Using Hugging Face models:
+    - **Embeddings**: {config.EMBEDDING_MODEL.split('/')[-1]}
+    - **LLM**: {config.LLM_MODEL.split('/')[-1]}
+    
+    💡 No API keys needed - runs locally!
+    """)
     
     # Ticker selection
     st.sidebar.subheader("📈 Select Companies")
@@ -205,10 +206,12 @@ def main():
         st.markdown('<div class="info-box">', unsafe_allow_html=True)
         st.markdown("""
         **How to use:**
-        1. Configure your Google AI Studio API key in the sidebar
-        2. Select companies to analyze
-        3. Click "Fetch & Index Filings" to download and process SEC 10-K filings
+        1. Select companies to analyze from the sidebar
+        2. Click "Fetch & Index Filings" to download and process SEC 10-K filings
+        3. Wait for models to download on first run (~3-4GB, one-time only)
         4. Ask questions about the companies' financial data
+        
+        💡 **Note**: First run may take 5-15 minutes to download models. Subsequent runs are instant!
         """)
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -305,32 +308,43 @@ def main():
         
         st.markdown("""
         ### 🎯 Purpose
-        This application leverages AI to analyze SEC 10-K filings, providing intelligent 
-        insights into company financial performance and enabling comparative analysis.
+        This application leverages local AI models to analyze SEC 10-K filings, providing 
+        intelligent insights into company financial performance and enabling comparative analysis.
         
         ### 🛠️ Technology Stack
+        - **Hugging Face Transformers**: Local AI models (Llama, Sentence Transformers)
         - **LangChain**: Framework for building LLM applications
-        - **Google AI Studio (Gemini)**: AI models for analysis and embeddings
         - **ChromaDB**: Vector database for efficient document retrieval
+        - **PyTorch**: Deep learning framework for model inference
         - **Streamlit**: Interactive web interface
         - **SEC EDGAR**: Source of financial filings
         
         ### 📊 Features
+        - Fully local operation - no external API dependencies
         - Fetch and parse SEC 10-K filings automatically
         - Intelligent question-answering using RAG (Retrieval-Augmented Generation)
         - Comparative analysis between companies
         - Natural language queries
-        - Visual representations of financial data
+        - Unlimited usage with no rate limits
         
-        ### 🔒 Privacy
-        - Your API key is stored locally and never transmitted except to Google AI Studio
+        ### 🔒 Privacy & Security
+        - **100% Local**: All data processing happens on your machine
+        - **No API Keys**: No external services or accounts needed
+        - **Complete Privacy**: Your data never leaves your computer
+        - **Offline Capable**: Works without internet after initial model download
         - SEC filings are publicly available data
-        - All processing happens on your machine or authorized cloud services
+        
+        ### 🚀 Performance
+        - **No Rate Limits**: Process unlimited queries
+        - **GPU Acceleration**: Faster inference with NVIDIA GPU
+        - **8-bit Quantization**: Reduced memory usage option
+        - **Customizable**: Full control over models and parameters
         
         ### 📝 Notes
         - This tool is for research and educational purposes
         - Always verify important financial information from official sources
         - SEC 10-K filings are historical data and may not reflect current conditions
+        - First run downloads models (~3-4GB) - one-time setup
         """)
         
         st.divider()
@@ -338,9 +352,13 @@ def main():
         st.subheader("🏗️ System Architecture")
         st.markdown("""
         1. **Data Ingestion**: Fetches 10-K filings from SEC EDGAR
-        2. **RAG Engine**: Processes documents, creates embeddings, stores in ChromaDB
-        3. **AI Agent**: Uses Google AI Studio LLM with access to RAG tools for intelligent analysis
-        4. **Frontend**: Streamlit interface for user interaction
+        2. **Local Embeddings**: Sentence Transformers generate document embeddings locally
+        3. **Vector Store**: ChromaDB stores and indexes documents for fast retrieval
+        4. **Local LLM**: Llama model runs on your hardware for analysis
+        5. **AI Agent**: LangChain agent orchestrates tools and reasoning
+        6. **Frontend**: Streamlit interface for user interaction
+        
+        **Everything runs locally on your machine!**
         """)
 
 
