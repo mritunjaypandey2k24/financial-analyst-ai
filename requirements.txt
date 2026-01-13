@@ -2,10 +2,10 @@
 langchain
 langchain-community
 langchain-core
-langchain-google-genai>=0.1.0
+langchain-google-genai>=1.0.3  # UPDATED: Required for Gemini 1.5
 langchain-text-splitters
 langgraph
-google-generativeai>=0.3.0
+google-generativeai>=0.5.2     # UPDATED: Required for Gemini 1.5
 chromadb
 
 # Data fetching and parsing
@@ -31,3 +31,4 @@ pydantic
 pytest
 pytest-cov
 pytest-asyncio
+langchain-chroma

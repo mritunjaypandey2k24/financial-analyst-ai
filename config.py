@@ -26,7 +26,7 @@ USER_AGENT = os.getenv("USER_AGENT", "Financial Analyst AI research@example.com"
 # RAG Configuration
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
-TOP_K_RESULTS = 5
+TOP_K_RESULTS = 3
 
 # Predefined tickers for analysis
 DEFAULT_TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN"]

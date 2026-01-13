@@ -2,11 +2,13 @@
 Vector Store Module
 
 Integrates ChromaDB for efficient storage and retrieval of document embeddings.
+Includes rate-limiting protection for Google AI Studio free tier.
 """
 from typing import List, Dict, Optional
+import time
 import chromadb
 from chromadb.config import Settings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 import config
 import logging
@@ -25,12 +27,7 @@ class RAGEngine:
     """
     
     def __init__(self, collection_name: str = "financial_filings"):
-        """
-        Initialize the RAG Engine.
-        
-        Args:
-            collection_name: Name of the ChromaDB collection
-        """
+        """Initialize the RAG Engine."""
         self.collection_name = collection_name
         self.chunker = DocumentChunker()
         
@@ -38,9 +35,15 @@ class RAGEngine:
         if not config.GOOGLE_AI_STUDIO_API_KEY:
             logger.warning("GOOGLE_AI_STUDIO_API_KEY not set. RAG Engine will not work properly.")
         
+        # Use config model or fallback to a stable one
+        model_name = config.EMBEDDING_MODEL
+        if not model_name:
+            model_name = "models/text-embedding-004"
+
         self.embeddings = GoogleGenerativeAIEmbeddings(
-            model=config.EMBEDDING_MODEL,
-            google_api_key=config.GOOGLE_AI_STUDIO_API_KEY
+            model=model_name,
+            google_api_key=config.GOOGLE_AI_STUDIO_API_KEY,
+            task_type="retrieval_document"
         )
         
         # Initialize ChromaDB
@@ -62,10 +65,7 @@ class RAGEngine:
     
     def add_documents(self, documents: List[Dict[str, str]]) -> None:
         """
-        Add documents to the vector store.
-        
-        Args:
-            documents: List of document dictionaries with 'content' and metadata
+        Add documents to the vector store with Rate Limiting.
         """
         if not documents:
             logger.warning("No documents provided to add")
@@ -90,26 +90,40 @@ class RAGEngine:
             for chunk in chunks
         ]
         
-        # Add to vector store
-        try:
-            self.vector_store.add_texts(texts=texts, metadatas=metadatas)
-            logger.info(f"Added {len(chunks)} chunks to vector store")
-        except Exception as e:
-            logger.error(f"Error adding documents to vector store: {str(e)}")
-            raise
+        # ---------------------------------------------------------
+        # FIX: Batch Processing with Sleep
+        # ---------------------------------------------------------
+        batch_size = 10
+        total_chunks = len(chunks)
+        logger.info(f"Starting upload of {total_chunks} chunks in batches of {batch_size}...")
+
+        for i in range(0, total_chunks, batch_size):
+            batch_texts = texts[i:i + batch_size]
+            batch_metadatas = metadatas[i:i + batch_size]
+            
+            try:
+                self.vector_store.add_texts(texts=batch_texts, metadatas=batch_metadatas)
+                
+                # Progress log
+                logger.info(f"Processed batch {i // batch_size + 1}/{(total_chunks // batch_size) + 1}")
+                
+                # CRITICAL: Sleep to prevent "429 Resource Exhausted"
+                time.sleep(2.5) 
+                
+            except Exception as e:
+                logger.error(f"Error adding batch {i}: {str(e)}")
+                # If rate limit hit, wait longer and retry once
+                if "429" in str(e):
+                    logger.warning("Hit rate limit. Sleeping 15s before retry...")
+                    time.sleep(15)
+                    self.vector_store.add_texts(texts=batch_texts, metadatas=batch_metadatas)
+                else:
+                    raise
+
+        logger.info(f"Successfully added {len(chunks)} chunks to vector store")
     
     def search(self, query: str, k: int = None, filter_dict: Optional[Dict] = None) -> List[Dict]:
-        """
-        Search for relevant documents using similarity search.
-        
-        Args:
-            query: Search query
-            k: Number of results to return
-            filter_dict: Optional metadata filter (e.g., {'ticker': 'AAPL'})
-            
-        Returns:
-            List of relevant document chunks with metadata
-        """
+        """Search for relevant documents using similarity search."""
         k = k or config.TOP_K_RESULTS
         
         try:
@@ -129,7 +143,6 @@ class RAGEngine:
                     'score': score
                 })
             
-            logger.info(f"Found {len(formatted_results)} results for query: {query[:50]}...")
             return formatted_results
             
         except Exception as e:
@@ -137,30 +150,11 @@ class RAGEngine:
             return []
     
     def search_by_ticker(self, query: str, ticker: str, k: int = None) -> List[Dict]:
-        """
-        Search for documents related to a specific ticker.
-        
-        Args:
-            query: Search query
-            ticker: Stock ticker symbol
-            k: Number of results to return
-            
-        Returns:
-            List of relevant document chunks
-        """
+        """Search for documents related to a specific ticker."""
         return self.search(query, k=k, filter_dict={'ticker': ticker})
     
     def get_context_for_query(self, query: str, k: int = None) -> str:
-        """
-        Get formatted context for a query.
-        
-        Args:
-            query: Search query
-            k: Number of results to return
-            
-        Returns:
-            Formatted context string
-        """
+        """Get formatted context for a query."""
         results = self.search(query, k=k)
         
         if not results:
@@ -180,20 +174,23 @@ class RAGEngine:
         """Clear all documents from the collection."""
         try:
             # Delete and recreate the collection
-            client = chromadb.PersistentClient(path=str(config.CHROMA_DB_DIR))
+            # Note: Chroma client handling varies by version, this is a safe generic approach
             try:
-                client.delete_collection(name=self.collection_name)
-                logger.info(f"Deleted collection: {self.collection_name}")
+                self.vector_store.delete_collection()
             except Exception:
-                pass  # Collection might not exist
+                pass
             
-            # Reinitialize vector store
+            # Reinitialize
             self.vector_store = self._initialize_vector_store()
-            logger.info("Vector store cleared and reinitialized")
+            logger.info("Vector store cleared")
             
         except Exception as e:
             logger.error(f"Error clearing collection: {str(e)}")
-            raise
+            # Fallback for some Chroma versions
+            import shutil
+            if config.CHROMA_DB_DIR.exists():
+                shutil.rmtree(config.CHROMA_DB_DIR)
+                config.CHROMA_DB_DIR.mkdir()
 
 
 def main():
