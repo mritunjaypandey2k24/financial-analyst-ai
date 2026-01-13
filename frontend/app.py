@@ -219,6 +219,16 @@ def main():
             st.error("System initialization failed. Please check your configuration.")
             st.stop()
         
+        # Display document count status
+        try:
+            doc_count = rag.get_document_count()
+            if doc_count > 0:
+                st.success(f"📚 {doc_count} documents indexed and ready for analysis")
+            else:
+                st.warning("⚠️ No documents indexed yet. Please fetch and index filings first.")
+        except Exception as e:
+            st.info("📊 Document status: Unable to retrieve count")
+        
         # Query input
         st.subheader("🤔 Ask a Question")
         
@@ -241,31 +251,45 @@ def main():
                 st.session_state['current_query'] = ""
                 st.rerun()
         
-        if analyze_button and query:
-            with st.spinner("🤖 Analyzing your query..."):
-                try:
-                    # Get response from agent
-                    response = agent.query(query)
-                    
-                    # Display response
-                    st.subheader("📊 Analysis Result")
-                    st.markdown(response)
-                    
-                    # Try to extract numerical data for visualization
-                    # This is a simple example - you could enhance this with more sophisticated parsing
-                    st.divider()
-                    st.subheader("📈 Visualization")
-                    
-                    # Example: Create a simple visualization placeholder
-                    st.info("💡 Tip: For numeric comparisons, visualizations will be generated automatically.")
-                    
-                    # You could add logic here to parse response and create charts
-                    # For demonstration, show a sample chart structure
-                    if "compare" in query.lower() or "versus" in query.lower():
-                        st.caption("Chart would appear here based on extracted data")
-                    
-                except Exception as e:
-                    st.error(f"Error processing query: {str(e)}")
+        # Validate and process query
+        if analyze_button:
+            # Validate query input
+            if not query or not query.strip():
+                st.error("❌ Please enter a valid query before analyzing.")
+            elif len(query.strip()) < 5:
+                st.error("❌ Query is too short. Please provide more details.")
+            elif len(query) > 1000:
+                st.error("❌ Query is too long. Please keep it under 1000 characters.")
+            else:
+                # Check if documents are available
+                if not rag.has_documents():
+                    st.error("❌ No documents available. Please fetch and index SEC 10-K filings first using the sidebar.")
+                else:
+                    with st.spinner("🤖 Analyzing your query..."):
+                        try:
+                            # Get response from agent
+                            response = agent.query(query.strip())
+                            
+                            # Display response
+                            st.subheader("📊 Analysis Result")
+                            st.markdown(response)
+                            
+                            # Try to extract numerical data for visualization
+                            # This is a simple example - you could enhance this with more sophisticated parsing
+                            st.divider()
+                            st.subheader("📈 Visualization")
+                            
+                            # Example: Create a simple visualization placeholder
+                            st.info("💡 Tip: For numeric comparisons, visualizations will be generated automatically.")
+                            
+                            # You could add logic here to parse response and create charts
+                            # For demonstration, show a sample chart structure
+                            if "compare" in query.lower() or "versus" in query.lower():
+                                st.caption("Chart would appear here based on extracted data")
+                        
+                        except Exception as e:
+                            st.error(f"❌ Error processing query: {str(e)}")
+                            st.info("💡 Tip: Try rephrasing your query or check if the relevant companies' filings are indexed.")
         
         # Search results section
         if query and not analyze_button:

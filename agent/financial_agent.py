@@ -62,15 +62,26 @@ class FinancialAnalystAgent:
         return tools
     
     def _search_filings(self, query: str) -> str:
+        """Search SEC filings for information."""
         try:
+            # Check if RAG engine has documents
+            if not self.rag_engine.has_documents():
+                return "No documents available. Please fetch and index SEC 10-K filings first before querying."
+            
             # Lower k to 3 to save tokens and avoid limits
             context = self.rag_engine.get_context_for_query(query, k=3)
             return context
         except Exception as e:
+            logger.error(f"Error in _search_filings: {str(e)}")
             return f"Error searching filings: {str(e)}"
     
     def _search_by_ticker(self, input_str: str) -> str:
+        """Search filings for a specific company ticker."""
         try:
+            # Check if RAG engine has documents
+            if not self.rag_engine.has_documents():
+                return "No documents available. Please fetch and index SEC 10-K filings first before querying."
+            
             if "query:" not in input_str:
                 return "Invalid format. Use 'ticker:AAPL query:your question'"
             
@@ -80,38 +91,62 @@ class FinancialAnalystAgent:
             
             results = self.rag_engine.search_by_ticker(query, ticker, k=3)
             if not results:
-                return f"No info found for {ticker}"
+                return f"No information found for {ticker}. Ensure this company's filings are indexed."
             
             return "\n\n".join([r['content'] for r in results])
         except Exception as e:
-            return f"Error: {str(e)}"
+            logger.error(f"Error in _search_by_ticker: {str(e)}")
+            return f"Error searching for ticker: {str(e)}"
     
     def _compare_companies(self, input_str: str) -> str:
+        """Compare data between two companies."""
         try:
+            # Check if RAG engine has documents
+            if not self.rag_engine.has_documents():
+                return "No documents available. Please fetch and index SEC 10-K filings first before comparing companies."
+            
             if "query:" not in input_str:
-                return "Invalid format."
+                return "Invalid format. Expected 'ticker1:AAPL ticker2:MSFT query:revenue comparison'"
             
             query = input_str.split("query:")[1].strip()
             words = input_str.split()
             tickers = [w.split(':')[1] for w in words if ':' in w and 'ticker' in w]
             
             if len(tickers) < 2:
-                return "Need two tickers."
+                return "Need at least two tickers to compare. Format: 'ticker1:AAPL ticker2:MSFT query:your question'"
             
             # Very conservative search to avoid token limits
             results1 = self.rag_engine.search_by_ticker(query, tickers[0], k=2)
             results2 = self.rag_engine.search_by_ticker(query, tickers[1], k=2)
             
+            if not results1 and not results2:
+                return f"No information found for {tickers[0]} or {tickers[1]}. Ensure these companies' filings are indexed."
+            elif not results1:
+                return f"No information found for {tickers[0]}. Only {tickers[1]} data is available."
+            elif not results2:
+                return f"No information found for {tickers[1]}. Only {tickers[0]} data is available."
+            
             return f"Data for {tickers[0]}:\n{results1}\n\nData for {tickers[1]}:\n{results2}"
         except Exception as e:
-            return f"Error comparing: {str(e)}"
+            logger.error(f"Error in _compare_companies: {str(e)}")
+            return f"Error comparing companies: {str(e)}"
     
     def _create_agent(self):
         system_message = "You are a financial analyst. Use the tools to find info in SEC filings. If you cannot find info, say so."
         return create_react_agent(self.llm, self.tools, prompt=system_message)
     
     def query(self, question: str) -> str:
-        """Process a query with MANUAL PAUSE logic for Free Tier."""
+        """Process a query with validation and error handling."""
+        # Input validation
+        if not question or not question.strip():
+            return "Please provide a valid query."
+        
+        question = question.strip()
+        
+        # Check if RAG engine has documents before attempting query
+        if not self.rag_engine.has_documents():
+            return "No documents available in the system. Please fetch and index SEC 10-K filings first before asking questions."
+        
         max_retries = 3
         
         for attempt in range(max_retries):
