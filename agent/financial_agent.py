@@ -96,8 +96,8 @@ class FinancialAnalystAgent:
             if not self.rag_engine.has_documents():
                 return "No documents available. Please fetch and index SEC 10-K filings first before querying."
             
-            # Lower k to 2 to save tokens and avoid limits (reduced from 3)
-            context = self.rag_engine.get_context_for_query(query, k=2)
+            # Increased k to 5 for more comprehensive retrieval results
+            context = self.rag_engine.get_context_for_query(query, k=5)
             return context
         except Exception as e:
             logger.error(f"Error in _search_filings: {str(e)}")
@@ -117,7 +117,8 @@ class FinancialAnalystAgent:
             ticker = parts[0].replace("ticker:", "").strip()
             query = parts[1].strip()
             
-            results = self.rag_engine.search_by_ticker(query, ticker, k=2)  # Reduced from 3
+            # Increased k to 5 for more comprehensive retrieval results
+            results = self.rag_engine.search_by_ticker(query, ticker, k=5)
             if not results:
                 return f"No information found for {ticker}. Ensure this company's filings are indexed."
             
@@ -228,6 +229,9 @@ Remember: Users expect precise financial data with proper attribution to source 
                 
                 response = self.agent_executor.invoke({"messages": [("user", enhanced_question)]})
                 
+                # Debug logging for raw AI response
+                print("\n🔍 RAW AI RESPONSE:", response)
+                
                 # Extract response - find the last AI message with actual content
                 messages = response.get("messages", [])
                 logger.debug(f"Received {len(messages)} messages from agent")
@@ -243,11 +247,29 @@ Remember: Users expect precise financial data with proper attribution to source 
                             # Log for debugging
                             logger.debug(f"Found AI message - content length: {len(str(content))}, tool_calls: {len(tool_calls)}")
                             
-                            # Return the first AI message with actual content
-                            # (iterating backwards, so this is the last AI message)
-                            if content and str(content).strip():
-                                logger.info(f"Returning response with {len(str(content))} characters")
-                                return str(content)
+                            # Handle content parsing: check if content is a list or string
+                            if content:
+                                # If content is a list, join all text parts together
+                                if isinstance(content, list):
+                                    text_parts = []
+                                    for part in content:
+                                        # Extract text from each part
+                                        if isinstance(part, dict) and 'text' in part:
+                                            text_parts.append(part['text'])
+                                        elif isinstance(part, str):
+                                            text_parts.append(part)
+                                        elif hasattr(part, 'text'):
+                                            text_parts.append(part.text)
+                                    content_str = ''.join(text_parts)
+                                else:
+                                    # If content is already a string, use it directly
+                                    content_str = str(content)
+                                
+                                # Return the first AI message with actual content
+                                # (iterating backwards, so this is the last AI message)
+                                if content_str and content_str.strip():
+                                    logger.info(f"Returning response with {len(content_str)} characters")
+                                    return content_str
                     
                     # Fallback: if no AI message with content found, return error
                     logger.warning("No AI message with content found in response")
