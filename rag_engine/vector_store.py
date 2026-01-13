@@ -173,11 +173,16 @@ class RAGEngine:
         for i, result in enumerate(results, 1):
             metadata = result['metadata']
             content = result['content']
+            ticker = metadata.get('ticker', 'N/A')
+            filing_date = metadata.get('filing_date', 'N/A')
+            score = result.get('score', 0.0)
+            
+            # Format each result with clear headers and metadata
             context_parts.append(
-                f"[Source {i} - {metadata.get('ticker', 'N/A')} - {metadata.get('filing_date', 'N/A')}]\n{content}\n"
+                f"[Result {i} - Company: {ticker}, Filing Date: {filing_date}, Relevance: {1.0 - score:.2f}]\n{content}"
             )
         
-        return "\n".join(context_parts)
+        return "\n\n---\n\n".join(context_parts)
     
     def get_document_count(self) -> int:
         """Get the number of documents in the vector store.
