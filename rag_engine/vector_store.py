@@ -180,9 +180,14 @@ class RAGEngine:
         return "\n".join(context_parts)
     
     def get_document_count(self) -> int:
-        """Get the number of documents in the vector store."""
+        """Get the number of documents in the vector store.
+        
+        Note: Accesses _collection (internal attribute) as ChromaDB doesn't provide
+        a public API for getting document count without performing a query.
+        """
         try:
             # Access the underlying ChromaDB collection
+            # This is necessary as Chroma doesn't expose a public count() method
             collection = self.vector_store._collection
             return collection.count()
         except Exception as e:
