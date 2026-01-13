@@ -2,11 +2,18 @@
 langchain
 langchain-community
 langchain-core
-langchain-google-genai>=1.0.3  # UPDATED: Required for Gemini 1.5
 langchain-text-splitters
 langgraph
-google-generativeai>=0.5.2     # UPDATED: Required for Gemini 1.5
 chromadb
+
+# Hugging Face dependencies for local models
+transformers>=4.35.0
+torch>=2.0.0
+sentence-transformers>=2.2.2
+accelerate>=0.20.0
+bitsandbytes>=0.41.0  # For 8-bit quantization
+sentencepiece>=0.1.99  # For tokenization
+langchain-huggingface>=0.0.1
 
 # Data fetching and parsing
 requests

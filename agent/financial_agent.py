@@ -1,14 +1,13 @@
 """
 Financial Analyst AI Agent Module
 
-Implements an intelligent agent using LangChain and Google AI Studio to perform
-comparative financial analysis using RAG Engine as a tool.
+Implements an intelligent agent using LangChain and Hugging Face local models
+to perform comparative financial analysis using RAG Engine as a tool.
 """
 from typing import List, Dict, Optional
-import time
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.tools import Tool
 from langgraph.prebuilt import create_react_agent
+from .local_llm import LocalLLM
 import config
 import logging
 
@@ -18,35 +17,17 @@ logger = logging.getLogger(__name__)
 
 class FinancialAnalystAgent:
     """
-    AI Agent for financial analysis and comparative queries.
+    AI Agent for financial analysis and comparative queries using local Hugging Face models.
     """
-    
-    # Rate limiting configuration constants (can be overridden via config.py)
-    MAX_RETRIES = config.MAX_RETRIES
-    BASE_WAIT_TIME = config.BASE_WAIT_TIME  # seconds
-    MIN_WAIT_BETWEEN_CALLS = config.MIN_WAIT_BETWEEN_CALLS  # seconds
-    
-    # Rate limit error patterns to detect
-    RATE_LIMIT_ERROR_PATTERNS = ["429", "resource_exhausted", "quota", "rate limit"]
     
     def __init__(self, rag_engine):
         self.rag_engine = rag_engine
         
-        if not config.GOOGLE_AI_STUDIO_API_KEY:
-            logger.warning("GOOGLE_AI_STUDIO_API_KEY not set. Agent will not work properly.")
-        
-        # Initialize LLM with strict parameters for Free Tier
-        self.llm = ChatGoogleGenerativeAI(
-            model=config.LLM_MODEL,
-            temperature=0,
-            google_api_key=config.GOOGLE_AI_STUDIO_API_KEY,
-            # We handle retries manually for better control over rate limits
-            max_retries=0,  # Disable internal retries, we handle it ourselves
-            request_timeout=90  # Longer timeout for free tier
-        )
-        
-        # Track last API call time for rate limiting
-        self.last_api_call_time = 0
+        # Initialize local LLM
+        logger.info("Initializing local Hugging Face model...")
+        self.local_llm = LocalLLM()
+        self.llm = self.local_llm.get_langchain_llm()
+        logger.info("Local LLM initialized successfully")
         
         self.tools = self._create_tools()
         self.agent_executor = self._create_agent()
@@ -213,87 +194,63 @@ Remember: Users expect precise financial data with proper attribution to source 
         logger.debug(f"Original query: {question}")
         logger.debug(f"Enhanced query: {enhanced_question}")
         
-        for attempt in range(self.MAX_RETRIES):
-            try:
-                # Add rate limiting - wait before each attempt to avoid hitting limits
-                current_time = time.time()
-                time_since_last_call = current_time - self.last_api_call_time
-                
-                if time_since_last_call < self.MIN_WAIT_BETWEEN_CALLS:
-                    wait_time = self.MIN_WAIT_BETWEEN_CALLS - time_since_last_call
-                    logger.info(f"Rate limiting: waiting {wait_time:.1f}s before attempt...")
-                    time.sleep(wait_time)
-                
-                logger.info(f"Processing query (Attempt {attempt+1}/{self.MAX_RETRIES})...")
-                self.last_api_call_time = time.time()
-                
-                response = self.agent_executor.invoke({"messages": [("user", enhanced_question)]})
-                
-                # Debug logging for raw AI response
-                print("\n🔍 RAW AI RESPONSE:", response)
-                
-                # Extract response - find the last AI message with actual content
-                messages = response.get("messages", [])
-                logger.debug(f"Received {len(messages)} messages from agent")
-                
-                if messages:
-                    # Iterate through messages in reverse to find the final AI response
-                    for msg in reversed(messages):
-                        if getattr(msg, 'type', None) == 'ai':
-                            # Check if this message has content and is not just a tool call
-                            content = msg.content
-                            tool_calls = getattr(msg, 'tool_calls', [])
+        try:
+            logger.info("Processing query with local model...")
+            
+            response = self.agent_executor.invoke({"messages": [("user", enhanced_question)]})
+            
+            # Debug logging for raw AI response
+            logger.debug(f"RAW AI RESPONSE: {response}")
+            
+            # Extract response - find the last AI message with actual content
+            messages = response.get("messages", [])
+            logger.debug(f"Received {len(messages)} messages from agent")
+            
+            if messages:
+                # Iterate through messages in reverse to find the final AI response
+                for msg in reversed(messages):
+                    if getattr(msg, 'type', None) == 'ai':
+                        # Check if this message has content and is not just a tool call
+                        content = msg.content
+                        tool_calls = getattr(msg, 'tool_calls', [])
+                        
+                        # Log for debugging
+                        logger.debug(f"Found AI message - content length: {len(str(content))}, tool_calls: {len(tool_calls)}")
+                        
+                        # Handle content parsing: check if content is a list or string
+                        if content:
+                            # If content is a list, join all text parts together
+                            if isinstance(content, list):
+                                text_parts = []
+                                for part in content:
+                                    # Extract text from each part
+                                    if isinstance(part, dict) and 'text' in part:
+                                        text_parts.append(part['text'])
+                                    elif isinstance(part, str):
+                                        text_parts.append(part)
+                                    elif hasattr(part, 'text'):
+                                        text_parts.append(part.text)
+                                content_str = ''.join(text_parts)
+                            else:
+                                # If content is already a string, use it directly
+                                content_str = str(content)
                             
-                            # Log for debugging
-                            logger.debug(f"Found AI message - content length: {len(str(content))}, tool_calls: {len(tool_calls)}")
-                            
-                            # Handle content parsing: check if content is a list or string
-                            if content:
-                                # If content is a list, join all text parts together
-                                if isinstance(content, list):
-                                    text_parts = []
-                                    for part in content:
-                                        # Extract text from each part
-                                        if isinstance(part, dict) and 'text' in part:
-                                            text_parts.append(part['text'])
-                                        elif isinstance(part, str):
-                                            text_parts.append(part)
-                                        elif hasattr(part, 'text'):
-                                            text_parts.append(part.text)
-                                    content_str = ''.join(text_parts)
-                                else:
-                                    # If content is already a string, use it directly
-                                    content_str = str(content)
-                                
-                                # Return the first AI message with actual content
-                                # (iterating backwards, so this is the last AI message)
-                                if content_str and content_str.strip():
-                                    logger.info(f"Returning response with {len(content_str)} characters")
-                                    return content_str
-                    
-                    # Fallback: if no AI message with content found, return error
-                    logger.warning("No AI message with content found in response")
-                    return "I processed your query but couldn't generate a response. Please try rephrasing your question. Helpful tip: Include the company name or ticker symbol (e.g., 'Apple' or 'AAPL') and specific metric (e.g., 'revenue', 'net income') in your query."
+                            # Return the first AI message with actual content
+                            # (iterating backwards, so this is the last AI message)
+                            if content_str and content_str.strip():
+                                logger.info(f"Returning response with {len(content_str)} characters")
+                                return content_str
                 
-                logger.warning("No messages in agent response")
-                return "No response generated. Please try rephrasing your question with more specific details."
+                # Fallback: if no AI message with content found, return error
+                logger.warning("No AI message with content found in response")
+                return "I processed your query but couldn't generate a response. Please try rephrasing your question. Helpful tip: Include the company name or ticker symbol (e.g., 'Apple' or 'AAPL') and specific metric (e.g., 'revenue', 'net income') in your query."
+            
+            logger.warning("No messages in agent response")
+            return "No response generated. Please try rephrasing your question with more specific details."
 
-            except Exception as e:
-                error_msg = str(e).lower()
-                # Catch the specific Google "Speed Limit" errors
-                if any(pattern in error_msg for pattern in self.RATE_LIMIT_ERROR_PATTERNS):
-                    # Exponential backoff: wait longer with each retry
-                    wait_time = self.BASE_WAIT_TIME * (2 ** attempt)  # 60s, 120s, 240s
-                    logger.warning(f"⚠️ Hit Rate Limit on attempt {attempt + 1}/{self.MAX_RETRIES}")
-                    print(f"⚠️ Hit Speed Limit. Pausing for {wait_time} seconds to let cool down...")
-                    time.sleep(wait_time)
-                    continue # Try again
-                else:
-                    logger.error(f"Error: {e}")
-                    return f"Error processing query: {str(e)}. Please ensure your question includes specific company names and financial metrics."
-        
-        # If all retries failed due to rate limits
-        return "The Google AI API is currently rate-limited. This is common with the free tier when making multiple requests. Please wait 2-3 minutes before trying again. Consider simplifying your query to use fewer API calls."
+        except Exception as e:
+            logger.error(f"Error processing query: {str(e)}")
+            return f"Error processing query: {str(e)}. Please ensure your question includes specific company names and financial metrics."
     
     def _enhance_query(self, question: str) -> str:
         """

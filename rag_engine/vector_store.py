@@ -1,15 +1,14 @@
 """
 Vector Store Module
 
-Integrates ChromaDB for efficient storage and retrieval of document embeddings.
-Includes rate-limiting protection for Google AI Studio free tier.
+Integrates ChromaDB for efficient storage and retrieval of document embeddings
+using Hugging Face models locally.
 """
 from typing import List, Dict, Optional
-import time
 import chromadb
 from chromadb.config import Settings
 from langchain_chroma import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 import config
 import logging
 from .text_splitter import DocumentChunker
@@ -23,7 +22,7 @@ class RAGEngine:
     Retrieval-Augmented Generation Engine.
     
     Handles document ingestion, embedding generation, storage in ChromaDB,
-    and similarity-based retrieval.
+    and similarity-based retrieval using local Hugging Face models.
     """
     
     def __init__(self, collection_name: str = "financial_filings"):
@@ -31,20 +30,24 @@ class RAGEngine:
         self.collection_name = collection_name
         self.chunker = DocumentChunker()
         
-        # Initialize embeddings
-        if not config.GOOGLE_AI_STUDIO_API_KEY:
-            logger.warning("GOOGLE_AI_STUDIO_API_KEY not set. RAG Engine will not work properly.")
+        # Initialize embeddings with Hugging Face model
+        logger.info(f"Initializing embeddings with model: {config.EMBEDDING_MODEL}")
         
-        # Use config model or fallback to a stable one
-        model_name = config.EMBEDDING_MODEL
-        if not model_name:
-            model_name = "models/text-embedding-004"
-
-        self.embeddings = GoogleGenerativeAIEmbeddings(
-            model=model_name,
-            google_api_key=config.GOOGLE_AI_STUDIO_API_KEY,
-            task_type="retrieval_document"
+        # Configure model kwargs for the embedding model
+        model_kwargs = {'device': config.DEVICE}
+        if config.USE_GPU:
+            model_kwargs['device'] = 'cuda'
+        
+        encode_kwargs = {'normalize_embeddings': True}
+        
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name=config.EMBEDDING_MODEL,
+            cache_folder=str(config.MODEL_CACHE_DIR),
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs
         )
+        
+        logger.info("Embeddings initialized successfully")
         
         # Initialize ChromaDB
         self.vector_store = self._initialize_vector_store()
@@ -65,7 +68,8 @@ class RAGEngine:
     
     def add_documents(self, documents: List[Dict[str, str]]) -> None:
         """
-        Add documents to the vector store with Rate Limiting.
+        Add documents to the vector store.
+        Local models don't have rate limits, so we can batch more aggressively.
         """
         if not documents:
             logger.warning("No documents provided to add")
@@ -90,10 +94,8 @@ class RAGEngine:
             for chunk in chunks
         ]
         
-        # ---------------------------------------------------------
-        # FIX: Batch Processing with Sleep
-        # ---------------------------------------------------------
-        batch_size = 10
+        # Process in larger batches since we're using local models
+        batch_size = 50  # Increased from 10 since no API rate limits
         total_chunks = len(chunks)
         logger.info(f"Starting upload of {total_chunks} chunks in batches of {batch_size}...")
 
@@ -107,18 +109,9 @@ class RAGEngine:
                 # Progress log
                 logger.info(f"Processed batch {i // batch_size + 1}/{(total_chunks // batch_size) + 1}")
                 
-                # CRITICAL: Sleep to prevent "429 Resource Exhausted"
-                time.sleep(2.5) 
-                
             except Exception as e:
                 logger.error(f"Error adding batch {i}: {str(e)}")
-                # If rate limit hit, wait longer and retry once
-                if "429" in str(e):
-                    logger.warning("Hit rate limit. Sleeping 15s before retry...")
-                    time.sleep(15)
-                    self.vector_store.add_texts(texts=batch_texts, metadatas=batch_metadatas)
-                else:
-                    raise
+                raise
 
         logger.info(f"Successfully added {len(chunks)} chunks to vector store")
     
