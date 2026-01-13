@@ -132,7 +132,13 @@ class FinancialAnalystAgent:
             return f"Error comparing companies: {str(e)}"
     
     def _create_agent(self):
-        system_message = "You are a financial analyst. Use the tools to find info in SEC filings. If you cannot find info, say so."
+        system_message = """You are a financial analyst assistant. When answering questions:
+1. Use the available tools to search SEC 10-K filings for relevant information
+2. After gathering information, provide a clear and concise answer to the user's question
+3. Cite specific figures, dates, and companies when available
+4. If you cannot find the requested information, explicitly state that
+
+Always provide a final answer based on the information you found."""
         return create_react_agent(self.llm, self.tools, prompt=system_message)
     
     def query(self, question: str) -> str:
@@ -155,13 +161,32 @@ class FinancialAnalystAgent:
                 
                 response = self.agent_executor.invoke({"messages": [("user", question)]})
                 
-                # Extract response
+                # Extract response - find the last AI message with actual content
                 messages = response.get("messages", [])
+                logger.debug(f"Received {len(messages)} messages from agent")
+                
                 if messages:
+                    # Iterate through messages in reverse to find the final AI response
                     for msg in reversed(messages):
                         if getattr(msg, 'type', None) == 'ai':
-                            return msg.content
-                    return str(messages[-1].content)
+                            # Check if this message has content and is not just a tool call
+                            content = msg.content
+                            tool_calls = getattr(msg, 'tool_calls', [])
+                            
+                            # Log for debugging
+                            logger.debug(f"Found AI message - content length: {len(str(content))}, tool_calls: {len(tool_calls)}")
+                            
+                            # Return the first AI message with actual content
+                            # (iterating backwards, so this is the last AI message)
+                            if content and str(content).strip():
+                                logger.info(f"Returning response with {len(str(content))} characters")
+                                return str(content)
+                    
+                    # Fallback: if no AI message with content found, return error
+                    logger.warning("No AI message with content found in response")
+                    return "I processed your query but couldn't generate a response. Please try rephrasing your question."
+                
+                logger.warning("No messages in agent response")
                 return "No response generated."
 
             except Exception as e:
